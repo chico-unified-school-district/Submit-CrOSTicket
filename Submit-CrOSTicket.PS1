@@ -99,7 +99,7 @@ do { # Begin Do Loop
    Port = 587
   }
   
-  Add-Log email ("{0},Helpdesk Ticket Created" -f $dev.Barcode )
+  Add-Log email ("{0},Helpdesk Ticket Created" -f $dev.Barcode ) -WhatIf:$WhatIf
   if ( $WhatIf ) { $to,$messageBody }
   else { Send-MailMessage @mailParams }
 
