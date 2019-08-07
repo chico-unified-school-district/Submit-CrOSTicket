@@ -33,18 +33,18 @@
 [cmdletbinding()]
 param (
  # SQL server name
- [Parameter(Mandatory=$True)]
+ [Parameter(Mandatory = $True)]
  [Alias('SISServer')]
  [string]$SQLServer,
  # SQL database name
- [Parameter(Mandatory=$True)]
- [Alias('SISDatabase','SISDB')]
+ [Parameter(Mandatory = $True)]
+ [Alias('SISDatabase', 'SISDB')]
  [string]$SQLDatabase,
  # Aeries SQL user account with SELECT permission to STU table 
- [Parameter(Mandatory=$True)]
+ [Parameter(Mandatory = $True)]
  [Alias('SISCred')]
  [System.Management.Automation.PSCredential]$SISCredential,
- [Parameter(Mandatory=$True)]
+ [Parameter(Mandatory = $True)]
  [Alias('MailCred')]
  [System.Management.Automation.PSCredential]$EmailCredential,
 	[SWITCH]$WhatIf
@@ -61,57 +61,60 @@ $messageTemplate = Get-Content -Path .\lib\HelpDesk-Message.txt -Raw
 
 $stopTime = Get-Date "5:00pm"
 "Runs every 60 minutes. Stops at $stopTime."
-do { # Begin Do Loop
+do {
+ # Begin Do Loop
  $checkInCrOSDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $sisQuery
- foreach($dev in $checkInCrOSDevices){ # Begin Device Processing
+ foreach ($dev in $checkInCrOSDevices) {
+  # Begin Device Processing
   Write-Debug ( "Process {0} ?" -f $dev.Barcode )
   # $messageData #'s correspond to the format operator placeholders in HelpDesk-Message.txt
   $messageData = @(
-   $dev.siteAbbr
-   $dev.Barcode
-   $dev.SerialNumber
-   $dev.MACAddress
-   $dev.Issued
-   $dev.Returned
-   $dev.Condition
-   $dev.ReturnCode
-   $dev.StudentName
-   $dev.ID
-   $dev.StuEmail
-   $dev.ProtectionPlan
-   $dev.Comment
-   ( Select-Site $dev.siteAbbr )
+   $dev.'Asset Tag Number'
+   $dev.'Status'
+   $dev.'Owner'
+   $dev.'Condition'
+   $dev.'site'
+   $dev.'Student ID Number'
+   $dev.'Student Name'
+   $dev.'Repair Count'
+   $dev.'Parent Email'
+   $dev.'Date Issued to Student'
+   $dev.'Date Check-in by Student'
+   $dev.'Device Model'
+   $dev.'Category'
+   $dev.'Owner'
+   $dev.'Comment'
   )
 
   # This can be used to look up the corresponding helpdesk ticket in KACE.
-  Write-Verbose ( "{0} - Chromebook Turn-In - {1}" -f $dev.siteAbbr,$dev.Barcode )
+  Write-Verbose ( "{0} - Chromebook Turn-In - {1}" -f $dev.siteAbbr, $dev.Barcode )
 
   $mailParams = @{
-   To =  '<servicedesk@kbox1.chicousd.org>'
+   To         = '<servicedesk@kbox1.chicousd.org>'
    # Bcc = '<jcooper@chicousd.org>'
-   From =  $EmailCredential.Username # no-reply@chicousd.org
-   Subject = ( "{0} - Chromebook Turn-In - {1}" -f $dev.siteAbbr,$dev.Barcode)
-   BodyAsHtml= $false
-   Body = ( $messageBody = $messageTemplate -f $messageData )
+   From       = $EmailCredential.Username # no-reply@chicousd.org
+   Subject    = ( "{0} - Chromebook Turn-In - {1}" -f $dev.siteAbbr, $dev.Barcode)
+   BodyAsHtml = $false
+   Body       = ( $messageBody = $messageTemplate -f $messageData )
    SMTPServer = 'smtp.office365.com'
-   Cred = $EmailCredential
-   UseSSL = $True
-   Port = 587
+   Cred       = $EmailCredential
+   UseSSL     = $True
+   Port       = 587
   }
   
   Add-Log email ("{0},Helpdesk Ticket Created" -f $dev.Barcode ) -WhatIf:$WhatIf
-  if ( $WhatIf ) { $to,$messageBody }
+  if ( $WhatIf ) { $to, $messageBody }
   else { Send-MailMessage @mailParams }
 
   # Add-Log update ( "{0},{1},{2},DRA 'Last Ticket Date' set" -f $dev.id,$dev.rin,$dev.Returned )
-  $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $dev.id,$dev.rin,$dev.Returned
+  $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $dev.id, $dev.rin, $dev.Returned
   Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -SqlCommand $updateDDCommand -WhatIf:$WhatIf
 
  }  # End Device Processing
 
  if (!$WhatIf) {
   Write-Verbose "Next run at $((Get-Date).AddHours(1))."
-  Start-Sleep -Seconds (60*60)
+  Start-Sleep -Seconds (60 * 60)
  }
 } until ( $WhatIf -or ((Get-Date) -ge $stopTime) )
 # End Do Loop
