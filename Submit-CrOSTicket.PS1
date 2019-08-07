@@ -67,20 +67,20 @@ do { # Begin Do Loop
   Write-Debug ( "Process {0} ?" -f $dev.Barcode )
   # $messageData #'s correspond to the format operator placeholders in HelpDesk-Message.txt
   $messageData = @(
-   $dev.siteAbbr #0
-   $dev.Barcode #1
-   $dev.SerialNumber #2
-   $dev.MACAddress #3
-   $dev.Issued #4
-   $dev.Returned #5
-   $dev.Condition #6
-   $dev.ReturnCode #7
-   $dev.StudentName #8
-   $dev.ID #9
-   $dev.StuEmail #10
-   $dev.ProtectionPlan #11
-   $dev.Comment #12
-   ( Select-Site $dev.siteAbbr ) #13
+   $dev.siteAbbr
+   $dev.Barcode
+   $dev.SerialNumber
+   $dev.MACAddress
+   $dev.Issued
+   $dev.Returned
+   $dev.Condition
+   $dev.ReturnCode
+   $dev.StudentName
+   $dev.ID
+   $dev.StuEmail
+   $dev.ProtectionPlan
+   $dev.Comment
+   ( Select-Site $dev.siteAbbr )
   )
 
   # This can be used to look up the corresponding helpdesk ticket in KACE.

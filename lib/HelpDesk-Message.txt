@@ -1,20 +1,14 @@
-@owner={13}
-@status=Assigned
-@priority=Low
-@impact=1 person inconvenienced
-@category=Chromebook::1:1
-@site={0}
-@Room Number=Chromebook Storage
-@Asset: {1}
-Barcode: {1}
-SerialNumber: {2}
-MACAddress: {3}
-Issued: {4}
-Returned: {5}
-Condition: {6}
-Return Code: {7}
-Student: {8}
-Student PermID: {9}
-Email: {10}
-ProtectionPlan: {11}
-Comment: {12}
+@Asset Tag Number=
+@Status=New
+@owner=
+@Condition=
+@site=
+@Student ID Number=
+@Student Name=
+@Repair Count=
+@Parent Email=
+@Date Issued to Student=
+@Date Check-in by Student=
+@Device Model=
+@Category=Chromebook 1:1
+@Owner=JLoomis
