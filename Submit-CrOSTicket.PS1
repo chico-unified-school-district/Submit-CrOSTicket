@@ -47,6 +47,8 @@ param (
  [Parameter(Mandatory = $True)]
  [Alias('MailCred')]
  [System.Management.Automation.PSCredential]$EmailCredential,
+ [Parameter(Mandatory = $True)]
+ [string]$TargetAddress,
 	[SWITCH]$WhatIf
 )
 
@@ -66,12 +68,11 @@ do {
  $checkInCrOSDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $sisQuery
  foreach ($dev in $checkInCrOSDevices) {
   # Begin Device Processing
-  Write-Debug ( "Process {0} ?" -f $dev.Barcode )
+  Write-Debug ( "Process {0} ?" -f $dev.'Asset Tag Number' )
   # $messageData #'s correspond to the format operator placeholders in HelpDesk-Message.txt
   $messageData = @(
    $dev.'Asset Tag Number'
    $dev.'Status'
-   $dev.'Owner'
    $dev.'Condition'
    $dev.'site'
    $dev.'Student ID Number'
@@ -87,10 +88,11 @@ do {
   )
 
   # This can be used to look up the corresponding helpdesk ticket in KACE.
-  Write-Verbose ( "{0} - Chromebook Turn-In - {1}" -f $dev.siteAbbr, $dev.Barcode )
+  Write-Verbose ( "{0} - Chromebook Turn-In - {1}" -f $dev.'Site', $dev.'Asset Tag Number' )
 
   $mailParams = @{
-   To         = '<servicedesk@kbox1.chicousd.org>'
+   # To         = '<servicedesk@kbox1.chicousd.org>'
+   To         = ('<{0}>' -f $TargetAddress)
    # Bcc = '<jcooper@chicousd.org>'
    From       = $EmailCredential.Username # no-reply@chicousd.org
    Subject    = ( "{0} - Chromebook Turn-In - {1}" -f $dev.siteAbbr, $dev.Barcode)
@@ -102,7 +104,7 @@ do {
    Port       = 587
   }
   
-  Add-Log email ("{0},Helpdesk Ticket Created" -f $dev.Barcode ) -WhatIf:$WhatIf
+  Add-Log email ("{0},Helpdesk Ticket Created" -f $dev.'Asset Tag Number' ) -WhatIf:$WhatIf
   if ( $WhatIf ) { $to, $messageBody }
   else { Send-MailMessage @mailParams }
 

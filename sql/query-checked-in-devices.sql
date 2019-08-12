@@ -1,10 +1,12 @@
 SELECT
  -- KACE Asset Tag/Barcode
  [DRI].[BC] AS [Asset Tag Number],
+ -- KACE Status
+ 'New' AS [STATUS],
  -- Condition
  CASE WHEN [DRA].[CD] = 'D' THEN 'Damaged'
   WHEN [DRA].[CD] = 'M' THEN 'Lost'
-  WHEN [DRA].[CD] = 'R' THEN 'Returned (No Damage)'
+  WHEN [DRA].[CD] = 'R' THEN 'Returned (No Damage)' -- R Does not generate a ticket
   WHEN [DRA].[CD] = 'S' THEN 'Stolen w Police report'
   WHEN [DRA].[CD] = 'V' THEN 'Recovered/Reactivated'
  ELSE 'No Hardware Damage' END AS [Condition],
@@ -41,6 +43,7 @@ SELECT
  STU.LN + ', ' + STU.FN AS [Student Name],
  --
  -- KACE REPAIR COUNT LOGIC HERE
+ 1 AS [Reapir Count],
  --
  -- KACE Parent Email
  [STU].[PEM] AS [Parent Email],
@@ -56,9 +59,16 @@ SELECT
  ELSE 'NO Condition' END AS [Damage Code],
  --  KACE Date Check-in by Student
  CONVERT(VARCHAR(10),[DRA].[RD],101) AS [Date Check-in by Student],
+ -- KACE Category
+ 'Chromebook 1:1'AS [Category],
+ -- KACE Device Model
+ 'HP G5' AS [Device Model],
+ -- KACE Owner
+ 'jloomis' AS [Owner],
  -- KACE Comment
  [DRA].[CO] AS [Comment],
  -- Other Data
+ [STU].[SEM] AS [Student Email],
  [DRA].[DD] as [Last Ticket Date],
  [DRI].[SR] AS [SerialNumber],
  [DRA].[DTS] AS TimeStamp,
