@@ -47,6 +47,8 @@ param (
  [Parameter(Mandatory = $True)]
  [Alias('MailCred')]
  [System.Management.Automation.PSCredential]$EmailCredential,
+ [Parameter(Mandatory = $false)]
+ [string]$DefaultOwner,
  [Parameter(Mandatory = $True)]
  [string]$TargetAddress,
 	[SWITCH]$WhatIf
@@ -83,7 +85,7 @@ do {
    $dev.'Date Check-in by Student'
    $dev.'Device Model'
    $dev.'Category'
-   $dev.'Owner'
+   $DefaultOwner
    $dev.'Comment'
   )
 
