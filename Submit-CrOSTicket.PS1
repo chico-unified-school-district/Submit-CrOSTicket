@@ -97,7 +97,7 @@ do {
    To         = ('<{0}>' -f $TargetAddress)
    # Bcc = '<jcooper@chicousd.org>'
    From       = $EmailCredential.Username # no-reply@chicousd.org
-   Subject    = ( "{0} - Chromebook Turn-In - {1}" -f $dev.siteAbbr, $dev.Barcode)
+   Subject    = ( "{0} - Chromebook Turn-In - {1}" -f $dev.site, $dev.'Asset Tag Number')
    BodyAsHtml = $false
    Body       = ( $messageBody = $messageTemplate -f $messageData )
    SMTPServer = 'smtp.office365.com'
@@ -111,7 +111,7 @@ do {
   else { Send-MailMessage @mailParams }
 
   # Add-Log update ( "{0},{1},{2},DRA 'Last Ticket Date' set" -f $dev.id,$dev.rin,$dev.Returned )
-  $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $dev.id, $dev.rin, $dev.Returned
+  $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student'
   Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -SqlCommand $updateDDCommand -WhatIf:$WhatIf
 
  }  # End Device Processing

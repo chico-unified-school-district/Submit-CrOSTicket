@@ -1,7 +1,7 @@
 @Asset Tag Number={0}
 @Status={1}
 @Condition={2}
-@site={3}
+@Site={3}
 @Student ID Number={4}
 @Student Name={5}
 @Repair Count={6}
@@ -11,4 +11,4 @@
 @Device Model={10}
 @Category={11}
 @Owner={12}
-@Comment={13}
+{13}

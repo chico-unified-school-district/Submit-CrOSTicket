@@ -43,7 +43,7 @@ SELECT
  STU.LN + ', ' + STU.FN AS [Student Name],
  --
  -- KACE REPAIR COUNT LOGIC HERE
- 1 AS [Reapir Count],
+ 1 AS [Repair Count],
  --
  -- KACE Parent Email
  [STU].[PEM] AS [Parent Email],
