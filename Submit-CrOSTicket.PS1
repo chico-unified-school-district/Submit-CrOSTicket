@@ -71,6 +71,7 @@ do {
  foreach ($dev in $checkInCrOSDevices) {
   # Begin Device Processing
   Write-Debug ( "Process {0} ?" -f $dev.'Asset Tag Number' )
+
   # $messageData #'s correspond to the format operator placeholders in HelpDesk-Message.txt
   $messageData = @(
    $dev.'Asset Tag Number'
@@ -91,7 +92,12 @@ do {
 
   # This can be used to look up the corresponding helpdesk ticket in KACE.
   Write-Verbose ( "{0} - Chromebook Turn-In - {1}" -f $dev.'Site', $dev.'Asset Tag Number' )
-
+  
+  # Fill in 'Last Ticket Date' [DRA].[DD] field to prevent duplicate tickets
+  Add-Log update ( $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student' )
+  $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student'
+  Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -SqlCommand $updateDDCommand -WhatIf:$WhatIf
+  
   $mailParams = @{
    # To         = '<servicedesk@kbox1.chicousd.org>'
    To         = ('<{0}>' -f $TargetAddress)
@@ -109,10 +115,6 @@ do {
   Add-Log email ("{0},Helpdesk Ticket Created" -f $dev.'Asset Tag Number' ) -WhatIf:$WhatIf
   if ( $WhatIf ) { $to, $messageBody }
   else { Send-MailMessage @mailParams }
-
-  # Add-Log update ( "{0},{1},{2},DRA 'Last Ticket Date' set" -f $dev.id,$dev.rin,$dev.Returned )
-  $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student'
-  Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -SqlCommand $updateDDCommand -WhatIf:$WhatIf
 
  }  # End Device Processing
 

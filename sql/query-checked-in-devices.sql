@@ -64,7 +64,7 @@ SELECT
  -- KACE Device Model
  'HP G5' AS [Device Model],
  -- KACE Owner
- 'jloomis' AS [Owner],
+ --'samAccountName' AS [Owner],
  -- KACE Comment
  [DRA].[CO] AS [Comment],
  -- Other Data
@@ -80,6 +80,7 @@ FROM (SELECT [STU].* FROM STU WHERE DEL = 0)
  DRI ON [DRI].[RID] = [DRA].[RID] AND [DRI].[RIN] = [DRA].[RIN]) ON [STU].[ID] = [DRA].[ID]
 
 WHERE
+ --DRI.BC = 'CB201800014508' AND
  DRA.DD IS NULL
  AND DRA.CD <> 'R'
  AND DRA.CD <> ' '
