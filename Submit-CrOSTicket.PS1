@@ -99,10 +99,9 @@ do {
   Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -SqlCommand $updateDDCommand -WhatIf:$WhatIf
   
   $mailParams = @{
-   # To         = '<servicedesk@kbox1.chicousd.org>'
    To         = ('<{0}>' -f $TargetAddress)
-   # Bcc = '<jcooper@chicousd.org>'
-   From       = $EmailCredential.Username # no-reply@chicousd.org
+   # Bcc = '<testing@company.com>'
+   From       = $EmailCredential.Username # a no reply account works bext
    Subject    = ( "{0} - Chromebook Turn-In - {1}" -f $dev.site, $dev.'Asset Tag Number')
    BodyAsHtml = $false
    Body       = ( $messageBody = $messageTemplate -f $messageData )
