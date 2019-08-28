@@ -52,6 +52,8 @@ SELECT
  -- KACE Damage Code
  CASE WHEN [DRA].[CC] = 'K' THEN 'Keyboard Malfunction'
   WHEN [DRA].[CC] = 'L' THEN 'LCD'
+  WHEN [DRA].[CC] = 'E' THEN 'Keycap Missing'
+  WHEN [DRA].[CC] = 'Q' THEN 'Liquid Damage'
   WHEN [DRA].[CC] = 'P' THEN 'Battery'
   WHEN [DRA].[CC] = 'T' THEN 'TouchPad'
   WHEN [DRA].[CC] = 'U' THEN 'other'
@@ -82,7 +84,8 @@ FROM (SELECT [STU].* FROM STU WHERE DEL = 0)
 WHERE
  --DRI.BC = 'CB201800014508' AND
  DRA.DD IS NULL
- AND DRA.CD <> 'R'
+ AND 
+ DRA.CD <> 'R'
  AND DRA.CD <> ' '
  AND DRA.RID = 1
 

@@ -11,4 +11,5 @@
 @Device Model={10}
 @Category={11}
 @Owner={12}
-{13}
+@Damage Code={13}
+{14}

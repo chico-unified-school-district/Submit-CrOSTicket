@@ -87,6 +87,7 @@ do {
    $dev.'Device Model'
    $dev.'Category'
    $DefaultOwner
+   $dev.'Damage Code'
    $dev.'Comment'
   )
 
@@ -94,7 +95,7 @@ do {
   Write-Verbose ( "{0} - Chromebook Turn-In - {1}" -f $dev.'Site', $dev.'Asset Tag Number' )
   
   # Fill in 'Last Ticket Date' [DRA].[DD] field to prevent duplicate tickets
-  Add-Log update ( $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student' )
+  Add-Log update ( '{0} {1} {2}' -f $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student' )
   $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student'
   Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -SqlCommand $updateDDCommand -WhatIf:$WhatIf
   
