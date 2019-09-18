@@ -103,7 +103,7 @@ do {
    To         = ('<{0}>' -f $TargetAddress)
    # Bcc = '<testing@company.com>'
    From       = $EmailCredential.Username # a no reply account works bext
-   Subject    = ( "{0} - Chromebook Turn-In - {1}" -f $dev.site, $dev.'Asset Tag Number')
+   Subject    = ( "{0} - Chromebook Turn-In - {1}" -f $dev.'Student ID Number', $dev.'Asset Tag Number')
    BodyAsHtml = $false
    Body       = ( $messageBody = $messageTemplate -f $messageData )
    SMTPServer = 'smtp.office365.com'
