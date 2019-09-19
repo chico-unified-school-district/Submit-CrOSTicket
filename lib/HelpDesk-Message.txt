@@ -4,7 +4,6 @@
 @Site={3}
 @Student ID Number={4}
 @Student Name={5}
-@Repair Count={6}
 @Parent Email={7}
 @Date Issued to Student={8}
 @Date Check-in by Student={9}
