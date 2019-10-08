@@ -50,7 +50,10 @@ SELECT
  -- KACE Date Issued to Student
  CONVERT(VARCHAR(10),[DRA].[DT],101) AS [Date Issued to Student],
  -- KACE Damage Code
- CASE WHEN [DRA].[CC] = 'K' THEN 'Keyboard Malfunction'
+ CASE 
+  WHEN [DRA].[CC] = 'K' THEN 'Keyboard Malfunction'
+  WHEN [DRA].[CC] = 'L' THEN 'LCD Cracked'
+  WHEN [DRA].[CC] = 'N' THEN 'Display Issues'
   WHEN [DRA].[CC] = 'L' THEN 'LCD'
   WHEN [DRA].[CC] = 'E' THEN 'Keycap Missing'
   WHEN [DRA].[CC] = 'Q' THEN 'Liquid Damage'
