@@ -53,7 +53,7 @@ SELECT
  CASE 
   WHEN [DRA].[CC] = 'K' THEN 'Keyboard Malfunction'
   WHEN [DRA].[CC] = 'L' THEN 'LCD Cracked'
-  WHEN [DRA].[CC] = 'N' THEN 'Display Issues',
+  WHEN [DRA].[CC] = 'N' THEN 'Display Issues'
    -- KACE Student ID Number
    [DRA].[ID] AS [Student ID Number],
    -- KACE Student Name
