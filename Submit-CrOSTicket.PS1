@@ -88,6 +88,7 @@ do {
    $dev.'Category'
    $DefaultOwner
    $dev.'Damage Code'
+   $dev.'Warranty Date'
    $dev.'Comment'
   )
 
