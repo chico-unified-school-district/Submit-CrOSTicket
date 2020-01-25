@@ -37,23 +37,6 @@ SELECT
   WHEN STU.SC = 28 THEN 'Sierra View' 
   WHEN STU.SC = 91 THEN 'Oakdale' 
  ELSE 'District Office' END AS Site,
- -- KACE Student ID Number
- [DRA].[ID] AS [Student ID Number],
- -- KACE Student Name
- STU.LN + ', ' + STU.FN AS [Student Name],
- --
- -- KACE REPAIR COUNT LOGIC HERE
- 1 AS [Repair Count],
- --
- -- KACE Parent Email
- [STU].[PEM] AS [Parent Email],
- -- KACE Date Issued to Student
- CONVERT(VARCHAR(10),[DRA].[DT],101) AS [Date Issued to Student],
- -- KACE Damage Code
- CASE 
-  WHEN [DRA].[CC] = 'K' THEN 'Keyboard Malfunction'
-  WHEN [DRA].[CC] = 'L' THEN 'LCD Cracked'
-  WHEN [DRA].[CC] = 'N' THEN 'Display Issues'
    -- KACE Student ID Number
    [DRA].[ID] AS [Student ID Number],
    -- KACE Student Name
