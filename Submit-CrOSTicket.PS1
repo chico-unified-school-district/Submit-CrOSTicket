@@ -129,12 +129,12 @@ do {
  $newRepairDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $newRepairQuery
  $closedTicketDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $closedTickerQuery
  if ( $newRepairDevices ) {
-  Add-Log info ('New Repair Devices to process: {0}' -f $newRepairDevices.count)
+  # Add-Log info ('New Repair Devices to process: {0}' -f $newRepairDevices.count)
   submitTicket -deviceResults $newRepairDevices
  }
 
  if ( $closedTicketDevices ) {
-  Add-Log info ('Closed Ticket Devices to process: {0}' -f $newRepairDevices.count)
+  # Add-Log info ('Closed Ticket Devices to process: {0}' -f $newRepairDevices.count)
   submitTicket -deviceResults $closedTicketDevices
  }
 
