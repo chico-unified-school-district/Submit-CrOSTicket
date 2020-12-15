@@ -51,7 +51,8 @@ SELECT
   -- KACE Date Issued to Student
   [DRA].[DT] AS [Date Issued to Student],
   -- KACE Damage Code
-  CASE WHEN [DRA].[CC] = 'K' THEN 'Keyboard Malfunction'
+  CASE
+  WHEN [DRA].[CC] = 'K' THEN 'Keyboard Malfunction'
   WHEN [DRA].[CC] = 'L' THEN 'LCD'
   WHEN [DRA].[CC] = 'E' THEN 'Keycap Missing'
   WHEN [DRA].[CC] = 'Q' THEN 'Liquid Damage'
@@ -95,11 +96,11 @@ FROM (SELECT [STU].*
 WHERE
  --DRI.BC = 'CB201800014887' AND STU.ID = 12345 AND
  DRA.CD <> 'R'
-  AND DRA.DD IS NULL
-  AND DRA.CD <> ' '
-  AND DRA.RID = 1
-  AND (NOT STU.TG > ' ') AND STU.SC IN ( 1,2,3,5,6,7,8,9,10,11,12,13,16,17,18,19,20,21,23,24,25,26,27,28 )
-  AND DRA.RD IS NOT NULL
-  AND ( DRA.RD > '2019-8-31' )
+ AND DRA.DD IS NULL
+ AND DRA.CD <> ' '
+ AND DRA.RID = 1
+ AND (NOT STU.TG > ' ') AND STU.SC IN ( 1,2,3,5,6,7,8,9,10,11,12,13,16,17,18,19,20,21,23,24,25,26,27,28 )
+ AND DRA.RD IS NOT NULL
+ AND ( DRA.RD > '2019-8-31' )
 -- Older enteries can be ignored
 ORDER BY DRA.RD,DRA.DD

@@ -60,36 +60,49 @@ param (
 . .\lib\Select-Site.ps1
 
 # Processing
-$sisQuery = Get-Content -Path .\sql\query-checked-in-devices.sql -Raw
-$messageTemplate = Get-Content -Path .\lib\HelpDesk-Message.txt -Raw
+$newRepairQuery = Get-Content -Path '.\sql\new-repair-tickets-2.sql' -Raw
+$closedTickerQuery = Get-Content -Path '.\sql\closed-ticket.sql' -Raw
+$messageTemplate = Get-Content -Path '.\lib\HelpDesk-Message.txt' -Raw
 
 $stopTime = Get-Date "5:00pm"
 "Runs every 60 minutes. Stops at $stopTime."
 do {
  # Begin Do Loop
- $checkInCrOSDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $sisQuery
- foreach ($dev in $checkInCrOSDevices) {
+ $newRepairDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $newRepairQuery
+ $closedTicketDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $closedTickerQuery
+
+ $allDevices = $null
+ $allDevices = $newRepairDevices+$closedTicketDevices
+ if ($allDevices) {  Add-Log info ('Devices to process: {0}' -f  $allDevices.count) }
+
+ foreach ($dev in $allDevices ) {
   # Begin Device Processing
-  Write-Debug ( "Process {0} ?" -f $dev.'Asset Tag Number' )
+  Write-Debug ( "`nProcess {0} ?" -f $dev.'Asset Tag Number' )
+  # Write-Host ($dev | Out-String) -ForegroundColor Blue
+
+  # Special Repair Location for tickets with a Status of 'Closed'
+  if ($dev.'Status' -eq 'Closed') { $repairLocation = 'No Repair Needed'
+  } else { $repairLocation = 'Tech Center' }
 
   # $messageData #'s correspond to the format operator placeholders in HelpDesk-Message.txt
   $messageData = @(
-   $dev.'Asset Tag Number'
-   $dev.'Status'
-   $dev.'Condition'
-   $dev.'site'
-   $dev.'Student ID Number'
-   $dev.'Student Name'
-   $dev.'Repair Count'
-   $dev.'Parent Email'
-   $dev.'Date Issued to Student'
-   $dev.'Date Check-in by Student'
-   $dev.'Device Model'
-   $dev.'Category'
-   $DefaultOwner
-   $dev.'Damage Code'
-   $dev.'Warranty Date'
-   $dev.'Comment'
+   $dev.'Asset Tag Number'         # 0
+   $dev.'Status'                   # 1
+   $dev.'Condition'                # 2
+   $dev.'site'                     # 3
+   $dev.'Student ID Number'        # 4
+   $dev.'Student Name'             # 5
+   $dev.'Repair Count'             # 6
+   $dev.'Parent Email'             # 7
+   $dev.'Date Issued to Student'   # 8
+   $dev.'Date Check-in by Student' # 9
+   $dev.'Device Model'             #10
+   $dev.'Category'                 #11
+   $DefaultOwner                   #12
+   $dev.'Damage Code'              #13
+   $dev.'Warranty Date'            #14
+   $repairLocation                 #15
+   $dev.'Comment'                  #16
   )
 
   # This can be used to look up the corresponding helpdesk ticket in KACE.
