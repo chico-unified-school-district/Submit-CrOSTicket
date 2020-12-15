@@ -62,8 +62,7 @@ param (
 function submitTicket ($deviceResults) {
  foreach ($dev in $deviceResults ) {
   # Begin Device Processing
-  Write-Debug ( "`nProcess {0} ?" -f $dev.'Asset Tag Number' )
-  # Write-Host ($dev | Out-String) -ForegroundColor Blue
+  Write-Debug ( "`n`n============ Process {0} ? ==============`n" -f $dev.'Asset Tag Number' )
 
   # Special Repair Location for tickets with a Status of 'Closed'
   if ($dev.'Status' -eq 'Closed') { $repairLocation = 'No Repair Needed'
@@ -129,15 +128,14 @@ do {
  # Begin Do Loop
  $newRepairDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $newRepairQuery
  $closedTicketDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $closedTickerQuery
-
  if ( $newRepairDevices ) {
-  Add-Log info ('New Repair Devices to process: {0}' -f  $newRepairDevices.count)
-  submitTicket -deviceResults $newRepairDevices 
+  Add-Log info ('New Repair Devices to process: {0}' -f $newRepairDevices.count)
+  submitTicket -deviceResults $newRepairDevices
  }
- 
- if ( $closedTicketDevices ) { 
-  Add-Log info ('Closed Ticket Devices to process: {0}' -f  $newRepairDevices.count)
-  submitTicket -deviceResults $closedTicketDevices 
+
+ if ( $closedTicketDevices ) {
+  Add-Log info ('Closed Ticket Devices to process: {0}' -f $newRepairDevices.count)
+  submitTicket -deviceResults $closedTicketDevices
  }
 
  if (!$WhatIf) {
