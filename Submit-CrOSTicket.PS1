@@ -59,23 +59,8 @@ param (
 . .\lib\Invoke-SqlCommand.ps1 # Useful function for querying SQL and returning results
 . .\lib\Select-Site.ps1
 
-# Processing
-$newRepairQuery = Get-Content -Path '.\sql\new-repair-tickets-2.sql' -Raw
-$closedTickerQuery = Get-Content -Path '.\sql\closed-ticket.sql' -Raw
-$messageTemplate = Get-Content -Path '.\lib\HelpDesk-Message.txt' -Raw
-
-$stopTime = Get-Date "5:00pm"
-"Runs every 60 minutes. Stops at $stopTime."
-do {
- # Begin Do Loop
- $newRepairDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $newRepairQuery
- $closedTicketDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $closedTickerQuery
-
- $allDevices = $null
- $allDevices = $newRepairDevices+$closedTicketDevices
- if ($allDevices) {  Add-Log info ('Devices to process: {0}' -f  $allDevices.count) }
-
- foreach ($dev in $allDevices ) {
+function submitTicket ($deviceResults) {
+ foreach ($dev in $deviceResults ) {
   # Begin Device Processing
   Write-Debug ( "`nProcess {0} ?" -f $dev.'Asset Tag Number' )
   # Write-Host ($dev | Out-String) -ForegroundColor Blue
@@ -131,6 +116,29 @@ do {
   else { Send-MailMessage @mailParams }
 
  }  # End Device Processing
+} # End submitTicket Function
+
+# Processing
+$newRepairQuery = Get-Content -Path '.\sql\new-repair-tickets-2.sql' -Raw
+$closedTickerQuery = Get-Content -Path '.\sql\closed-ticket.sql' -Raw
+$messageTemplate = Get-Content -Path '.\lib\HelpDesk-Message.txt' -Raw
+
+$stopTime = Get-Date "5:00pm"
+"Runs every 60 minutes. Stops at $stopTime."
+do {
+ # Begin Do Loop
+ $newRepairDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $newRepairQuery
+ $closedTicketDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $closedTickerQuery
+
+ if ( $newRepairDevices ) {
+  Add-Log info ('New Repair Devices to process: {0}' -f  $newRepairDevices.count)
+  submitTicket -deviceResults $newRepairDevices 
+ }
+ 
+ if ( $closedTicketDevices ) { 
+  Add-Log info ('Closed Ticket Devices to process: {0}' -f  $newRepairDevices.count)
+  submitTicket -deviceResults $closedTicketDevices 
+ }
 
  if (!$WhatIf) {
   Write-Verbose "Next run at $((Get-Date).AddHours(1))."
