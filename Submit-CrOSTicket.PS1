@@ -79,7 +79,7 @@ function submitTicket ($deviceResults) {
    $dev.'Repair Count'             # 6
    $dev.'Parent Email'             # 7
    $dev.'Date Issued to Student'   # 8
-   $dev.'Date Check-in by Student' # 9
+   $dev.'Date Check-in by Student' # 9'CLedgerwood'
    $dev.'Device Model'             #10
    $dev.'Category'                 #11
    $DefaultOwner                   #12
@@ -93,8 +93,9 @@ function submitTicket ($deviceResults) {
   Write-Verbose ( "{0} - Chromebook Turn-In - {1}" -f $dev.'Site', $dev.'Asset Tag Number' )
   
   # Fill in 'Last Ticket Date' [DRA].[DD] field to prevent duplicate tickets
-  Add-Log update ( '{0} {1} {2}' -f $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student' )
-  $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student'
+  $updateDDFields = $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student'
+  Add-Log update ( '{0} {1} {2}' -f $updateDDFields  )
+  $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $updateDDFields
   Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -SqlCommand $updateDDCommand -WhatIf:$WhatIf
   
   $mailParams = @{
@@ -115,6 +116,7 @@ function submitTicket ($deviceResults) {
   else { Send-MailMessage @mailParams }
 
  }  # End Device Processing
+ if ($dev.'Asset Tag Number' -eq 'CB202000024328') { EXIT }
 } # End submitTicket Function
 
 # Processing
@@ -139,7 +141,8 @@ do {
  }
 
  if (!$WhatIf) {
-  Write-Verbose "Next run at $((Get-Date).AddHours(1))."
+  $waitHours = 1
+  Write-Verbose "Next run at $((Get-Date).AddHours($waitHours))."
   Start-Sleep -Seconds (60 * 60)
  }
 } until ( $WhatIf -or ((Get-Date) -ge $stopTime) )

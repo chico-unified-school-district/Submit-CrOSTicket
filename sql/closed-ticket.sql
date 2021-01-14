@@ -105,15 +105,12 @@ FROM (SELECT [STU].*
  DRI ON [DRI].[RID] = [DRA].[RID] AND [DRI].[RIN] = [DRA].[RIN]) ON [STU].[ID] = [DRA].[ID]
 
 WHERE
---dra.id = '87305' and
- --DRI.BC = 'CB201800014887' AND STU.ID = 12345    AND
-DRA.CC = ' '  AND
-(DRA.CD in ('R','W') or DRA.CD = ' ') AND
- DRA.DD IS NULL      AND 
-
- DRA.RID IN (1,3,6)
-  AND (NOT STU.TG > ' ') AND STU.SC IN ( 1,2,3,5,6,7,8,9,10,11,12,13,16,17,18,19,20,21,23,24,25,26,27,28,91 )
-  AND DRA.RD IS NOT NULL
-  AND ( DRA.RD > '2020-12-14' )
+ DRA.CC = ' '
+ AND (DRA.CD in ('R','W') or DRA.CD = ' ') 
+ AND DRA.DD IS NULL
+ AND DRA.RID IN (1,3,6)
+ AND (NOT STU.TG > ' ') AND STU.SC IN ( 1,2,3,5,6,7,8,9,10,11,12,13,16,17,18,19,20,21,23,24,25,26,27,28,91 )
+ AND DRA.RD IS NOT NULL
+ AND ( DRA.RD > '2020-12-14' )
 -- Older enteries can be ignored
 ORDER BY DRA.RD,DRA.DD

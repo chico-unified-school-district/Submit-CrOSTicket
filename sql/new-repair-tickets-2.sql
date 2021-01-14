@@ -1,5 +1,6 @@
 SELECT
   -- KACE Asset Tag/Barcode
+  -- Asset Tag Number = Barcode
   [DRI].[BC] AS [Asset Tag Number],
   -- KACE Status
   'New' AS [STATUS],
