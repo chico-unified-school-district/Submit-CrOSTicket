@@ -89,7 +89,7 @@ function submitTicket ($deviceResults) {
    $dev.'Comment'                  #16
   )
 
-  # This can be used to look up the corresponding helpdesk ticket in KACE.
+  # This can be used to look up the corresponding helpdesk ticket in KACE
   Write-Verbose ( "{0} - Chromebook Turn-In - {1}" -f $dev.'Site', $dev.'Asset Tag Number' )
   
   # Fill in 'Last Ticket Date' [DRA].[DD] field to prevent duplicate tickets
