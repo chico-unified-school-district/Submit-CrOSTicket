@@ -125,6 +125,7 @@ $crosFields = "annotatedUser,annotatedAssetId,orgUnitPath,deviceId,status"
 $targOU = '/Chromebooks/Cart'
 
 function moveToCart ($assetTagNumber) {
+ # moveToCart function moves all processed devices with a valid devid_id/barcode to the '/Chromebooks/Cart' OU
  if ($assetTagNumber){
   # find the device in gsuite
   ($gamDeviceRaw = .$gam print cros query "asset_id: $assetTagNumber" fields $crosFields) *>$null
