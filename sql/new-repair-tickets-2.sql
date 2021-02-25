@@ -103,8 +103,8 @@ FROM (SELECT [STU].*
 
 WHERE
  --DRI.BC = 'CB201800014887' AND STU.ID = 12345    AND
- (DRA.CC IN ( 'E', 'K','L','N','O','P','Q','S','T','U', 'V', 'X', 'Y' )    or DRA.CD in ('D','M', 'S')) AND
- DRA.DD IS NULL      AND 
+ (DRA.CC IN ( 'E', 'K','L','N','O','P','Q','S','T','U', 'V', 'X', 'Y' )    or DRA.CD in ('D')) AND
+ DRA.DD IS NULL      AND
  
  DRA.RID IN (1,3,6)
   AND (NOT STU.TG > ' ') AND STU.SC IN ( 1,2,3,5,6,7,8,9,10,11,12,13,16,17,18,19,20,21,23,24,25,26,27,28,91 )

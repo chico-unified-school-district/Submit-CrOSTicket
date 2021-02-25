@@ -91,13 +91,13 @@ function submitTicket ($deviceResults) {
 
   # This can be used to look up the corresponding helpdesk ticket in KACE
   Write-Verbose ( "{0} - Chromebook Turn-In - {1}" -f $dev.'Site', $dev.'Asset Tag Number' )
-  
+
   # Fill in 'Last Ticket Date' [DRA].[DD] field to prevent duplicate tickets
   $updateDDFields = $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student'
-  Add-Log update ( '{0} {1} {2}' -f $updateDDFields  )
+  Add-Log update ( '{0} {1} {2}' -f $updateDDFields  ) -WhatIf:$WhatIf
   $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $updateDDFields
   Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -SqlCommand $updateDDCommand -WhatIf:$WhatIf
-  
+
   $mailParams = @{
    To         = ('<{0}>' -f $TargetAddress)
    # Bcc = '<testing@company.com>'
@@ -110,7 +110,7 @@ function submitTicket ($deviceResults) {
    UseSSL     = $True
    Port       = 587
   }
-  
+
   Add-Log email ("{0},Helpdesk Ticket Created" -f $dev.'Asset Tag Number' ) -WhatIf:$WhatIf
   if ( $WhatIf ) { $to, $messageBody }
   else { Send-MailMessage @mailParams }
@@ -118,6 +118,32 @@ function submitTicket ($deviceResults) {
  }  # End Device Processing
  if ($dev.'Asset Tag Number' -eq 'CB202000024328') { EXIT }
 } # End submitTicket Function
+
+$ENV:GAM_DEVICE_MAX_RESULTS = 100
+$gam = '.\lib\gam-64\gam.exe'
+$crosFields = "annotatedUser,annotatedAssetId,orgUnitPath,deviceId,status"
+$targOU = '/Chromebooks/Cart'
+
+function moveToCart ($assetTagNumber) {
+ if ($assetTagNumber){
+  # find the device in gsuite
+  ($gamDeviceRaw = .$gam print cros query "asset_id: $assetTagNumber" fields $crosFields) *>$null
+  if ($gamDeviceRaw){
+   $gamDevice = $gamDeviceRaw | ConvertFrom-Csv
+   $id = $gamDevice.deviceId
+   if ($WhatIf){
+    ".$gam update cros $id ou $targOU"
+   } else {
+    .$gam update cros $id ou $targOU
+   }
+   Add-Log gsuitemove ('{0} moved to {1}' -f $assetTagNumber, $targOU) -WhatIf:$WhatIf
+  } else {
+   Add-Log warning ('{0} barcode/Asset Tag not found in GSuite' -f $assetTagNumber)
+  }
+ } else {
+  Add-Log warning ('{0} Asset Tag missing from device entry in SISDB' -f $assetTagNumber)
+ }
+}
 
 # Processing
 $newRepairQuery = Get-Content -Path '.\sql\new-repair-tickets-2.sql' -Raw
@@ -133,11 +159,13 @@ do {
  if ( $newRepairDevices ) {
   # Add-Log info ('New Repair Devices to process: {0}' -f $newRepairDevices.count)
   submitTicket -deviceResults $newRepairDevices
+  moveToCart $dev.'Asset Tag Number'
  }
 
  if ( $closedTicketDevices ) {
   # Add-Log info ('Closed Ticket Devices to process: {0}' -f $newRepairDevices.count)
   submitTicket -deviceResults $closedTicketDevices
+  moveToCart $dev.'Asset Tag Number'
  }
 
  if (!$WhatIf) {
