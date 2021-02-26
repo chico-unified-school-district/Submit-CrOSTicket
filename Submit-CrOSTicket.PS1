@@ -1,6 +1,7 @@
 <#
 .SYNOPSIS
- Submit-CrOSTicket.PS1 Checks Aeries for returned Chromebooks and generates a helpdesk ticket in KACE
+ Submit-CrOSTicket.PS1 Checks Aeries for returned Chromebooks and generates a helpdesk ticket in KACE and
+ moves associated devices to the CART OU in Gsuite to apply the 'clear profile' policy.
 .DESCRIPTION
  Query Aeries, generate a formatted email body and subject, send this data to the KACE helpdesk system
 .PARAMETER SISCOnnection
@@ -116,7 +117,7 @@ function submitTicket ($deviceResults) {
   else { Send-MailMessage @mailParams }
 
  }  # End Device Processing
- if ($dev.'Asset Tag Number' -eq 'CB202000024328') { EXIT }
+ if ($dev.'Asset Tag Number' -eq 'CB202000024328') { EXIT } # Not sure why this is still here
 } # End submitTicket Function
 
 $ENV:GAM_DEVICE_MAX_RESULTS = 100
