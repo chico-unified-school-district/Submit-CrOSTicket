@@ -94,7 +94,7 @@ function submitTicket ($deviceResults) {
 
   # Fill in 'Last Ticket Date' [DRA].[DD] field to prevent duplicate tickets
   $updateDDFields = $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student'
-  Add-Log update ( '{0} {1} {2}' -f $updateDDFields  ) -WhatIf:$WhatIf
+  Add-Log update ( 'DRA.DD (Ticket Date) Updated where ID {0} RIN {1} Check-In Date {2}' -f $updateDDFields  ) -WhatIf:$WhatIf
   $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $updateDDFields
   Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -SqlCommand $updateDDCommand -WhatIf:$WhatIf
 
