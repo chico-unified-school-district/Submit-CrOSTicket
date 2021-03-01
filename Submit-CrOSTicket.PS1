@@ -60,64 +60,68 @@ param (
 . .\lib\Invoke-SqlCommand.ps1 # Useful function for querying SQL and returning results
 . .\lib\Select-Site.ps1
 
-function submitTicket ($deviceResults) {
- foreach ($dev in $deviceResults ) {
-  # Begin Device Processing
-  Write-Debug ( "`n`n============ Process {0} ? ==============`n" -f $dev.'Asset Tag Number' )
+function submitTicket ($deviceResults,[string]$type) {
+ begin {Write-Verbose "Submit Tickets - Processing $type"}
+ process {
+  foreach ($dev in $deviceResults ) {
+   # Begin Device Processing
+   Write-Debug ( "`n`n============ Process {0} ? ==============`n" -f $dev.'Asset Tag Number' )
 
-  # Special Repair Location for tickets with a Status of 'Closed'
-  if ($dev.'Status' -eq 'Closed') { $repairLocation = 'No Repair Needed'
-  } else { $repairLocation = 'Tech Center' }
+   # Special Repair Location for tickets with a Status of 'Closed'
+   if ($dev.'Status' -eq 'Closed') { $repairLocation = 'No Repair Needed'
+   } else { $repairLocation = 'Tech Center' }
 
-  # $messageData #'s correspond to the format operator placeholders in HelpDesk-Message.txt
-  $messageData = @(
-   $dev.'Asset Tag Number'         # 0
-   $dev.'Status'                   # 1
-   $dev.'Condition'                # 2
-   $dev.'site'                     # 3
-   $dev.'Student ID Number'        # 4
-   $dev.'Student Name'             # 5
-   $dev.'Repair Count'             # 6
-   $dev.'Parent Email'             # 7
-   $dev.'Date Issued to Student'   # 8
-   $dev.'Date Check-in by Student' # 9'CLedgerwood'
-   $dev.'Device Model'             #10
-   $dev.'Category'                 #11
-   $DefaultOwner                   #12
-   $dev.'Damage Code'              #13
-   $dev.'Warranty Date'            #14
-   $repairLocation                 #15
-   $dev.'Comment'                  #16
-  )
-
-  # This can be used to look up the corresponding helpdesk ticket in KACE
-  Write-Verbose ( "{0} - Chromebook Turn-In - {1}" -f $dev.'Site', $dev.'Asset Tag Number' )
-
-  # Fill in 'Last Ticket Date' [DRA].[DD] field to prevent duplicate tickets
-  $updateDDFields = $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student'
-  Add-Log update ( 'DRA.DD (Ticket Date) Updated where ID {0} RIN {1} Check-In Date {2}' -f $updateDDFields  ) -WhatIf:$WhatIf
-  $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $updateDDFields
-  Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -SqlCommand $updateDDCommand -WhatIf:$WhatIf
-
-  $mailParams = @{
-   To         = ('<{0}>' -f $TargetAddress)
-   # Bcc = '<testing@company.com>'
-   From       = $EmailCredential.Username # a no reply account works bext
-   Subject    = ( "{0} - Chromebook Turn-In - {1}" -f $dev.'Student ID Number', $dev.'Asset Tag Number')
-   BodyAsHtml = $false
-   Body       = ( $messageBody = $messageTemplate -f $messageData )
-   SMTPServer = 'smtp.office365.com'
-   Cred       = $EmailCredential
-   UseSSL     = $True
-   Port       = 587
-  }
-
-  Add-Log email ("{0},Helpdesk Ticket Created" -f $dev.'Asset Tag Number' ) -WhatIf:$WhatIf
-  if ( $WhatIf ) { $to, $messageBody }
-  else { Send-MailMessage @mailParams }
-
- }  # End Device Processing
- if ($dev.'Asset Tag Number' -eq 'CB202000024328') { EXIT } # Not sure why this is still here
+   # $messageData #'s correspond to the format operator placeholders in HelpDesk-Message.txt
+   $messageData = @(
+    $dev.'Asset Tag Number'         # 0
+    $dev.'Status'                   # 1
+    $dev.'Condition'                # 2
+    $dev.'site'                     # 3
+    $dev.'Student ID Number'        # 4
+    $dev.'Student Name'             # 5
+    $dev.'Repair Count'             # 6
+    $dev.'Parent Email'             # 7
+    $dev.'Date Issued to Student'   # 8
+    $dev.'Date Check-in by Student' # 9
+    $dev.'Device Model'             #10
+    $dev.'Category'                 #11
+    $DefaultOwner                   #12
+    $dev.'Damage Code'              #13
+    $dev.'Warranty Date'            #14
+    $repairLocation                 #15
+    $dev.'Comment'                  #16
+   )
+ 
+   # This can be used to look up the corresponding helpdesk ticket in KACE
+   Write-Verbose ( "{0} - Chromebook Turn-In - {1}" -f $dev.'Site', $dev.'Asset Tag Number' )
+ 
+   # Fill in 'Last Ticket Date' [DRA].[DD] field to prevent duplicate tickets
+   $updateDDFields = $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student'
+   Add-Log update ( 'DRA.DD (Ticket Date) Updated where ID {0} RIN {1} Check-In Date {2}' -f $updateDDFields  ) -WhatIf:$WhatIf
+   $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $updateDDFields
+   Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -SqlCommand $updateDDCommand -WhatIf:$WhatIf
+ 
+   $mailParams = @{
+    To         = ('<{0}>' -f $TargetAddress)
+    # Bcc = '<testing@company.com>'
+    From       = $EmailCredential.Username # a no reply account works bext
+    Subject    = ( "{0} - Chromebook Turn-In - {1}" -f $dev.'Student ID Number', $dev.'Asset Tag Number')
+    BodyAsHtml = $false
+    Body       = ( $messageBody = $messageTemplate -f $messageData )
+    SMTPServer = 'smtp.office365.com'
+    Cred       = $EmailCredential
+    UseSSL     = $True
+    Port       = 587
+   }
+ 
+   Add-Log email ("{0},Helpdesk Ticket Created" -f $dev.'Asset Tag Number' ) -WhatIf:$WhatIf
+   if ( $WhatIf ) { $to, $messageBody }
+   else { Send-MailMessage @mailParams }
+ 
+  }  # End Device Processing
+ }
+ end {}
+ # if ($dev.'Asset Tag Number' -eq 'CB202000024328') { EXIT } # Not sure why this is still here
 } # End submitTicket Function
 
 $ENV:GAM_DEVICE_MAX_RESULTS = 100
@@ -125,26 +129,29 @@ $gam = '.\lib\gam-64\gam.exe'
 $crosFields = "annotatedUser,annotatedAssetId,orgUnitPath,deviceId,status"
 $targOU = '/Chromebooks/Cart'
 
-function moveToCart ($assetTagNumber) {
+function moveToCart ($deviceResults,[string]$type) {
  # moveToCart function moves all processed devices with a valid devid_id/barcode to the '/Chromebooks/Cart' OU
- if ($assetTagNumber){
-  # find the device in gsuite
-  ($gamDeviceRaw = .$gam print cros query "asset_id: $assetTagNumber" fields $crosFields) *>$null
-  if ($gamDeviceRaw){
-   $gamDevice = $gamDeviceRaw | ConvertFrom-Csv
-   $id = $gamDevice.deviceId
-   if ($WhatIf){
-    ".$gam update cros $id ou $targOU"
-   } else {
-    .$gam update cros $id ou $targOU
-   }
-   Add-Log gsuitemove ('{0} moved to {1}' -f $assetTagNumber, $targOU) -WhatIf:$WhatIf
-  } else {
-   Add-Log warning ('{0} barcode/Asset Tag not found in GSuite' -f $assetTagNumber)
+ begin {Write-Verbose "Move To Cart - Processing $type"}
+ process {
+  foreach ($dev in $deviceResults) {
+   $barCode = $dev.'Asset Tag Number' 
+    # find the device in gsuite
+    ($gamDeviceRaw = .$gam print cros query "asset_id: $barCode" fields $crosFields) *>$null
+    if ($gamDeviceRaw){
+     $gamDevice = $gamDeviceRaw | ConvertFrom-Csv
+     $id = $gamDevice.deviceId
+     if ($WhatIf){
+      ".$gam update cros $id ou $targOU"
+     } else {
+      .$gam update cros $id ou $targOU
+     }
+     Add-Log gsuitemove ('{0} moved to {1}' -f $id, $targOU) -WhatIf:$WhatIf
+    } else {
+     Add-Log warning ('{0} barcode/Asset Tag not found in GSuite' -f $barCode)
+    }
   }
- } else {
-  Add-Log warning ('{0} Asset Tag missing from device entry in SISDB' -f $assetTagNumber)
  }
+ end {}
 }
 
 # Processing
@@ -160,14 +167,14 @@ do {
  $closedTicketDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $closedTickerQuery
  if ( $newRepairDevices ) {
   # Add-Log info ('New Repair Devices to process: {0}' -f $newRepairDevices.count)
-  submitTicket -deviceResults $newRepairDevices
-  moveToCart $dev.'Asset Tag Number'
+  submitTicket -deviceResults $newRepairDevices -Type newRepairDevices
+  moveToCart -deviceResults $newRepairDevices -Type newRepairDevices
  }
 
  if ( $closedTicketDevices ) {
   # Add-Log info ('Closed Ticket Devices to process: {0}' -f $newRepairDevices.count)
-  submitTicket -deviceResults $closedTicketDevices
-  moveToCart $dev.'Asset Tag Number'
+  submitTicket -deviceResults $closedTicketDevices -type closedTicketDevices
+  moveToCart -deviceResults $closedTicketDevices -type closedTicketDevices
  }
 
  if (!$WhatIf) {
