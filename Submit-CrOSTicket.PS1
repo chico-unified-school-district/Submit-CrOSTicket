@@ -134,23 +134,27 @@ function moveToCart ($deviceResults,[string]$type) {
  begin {Write-Verbose "Move To Cart - Processing $type"}
  process {
   foreach ($dev in $deviceResults) {
-   $barCode = $dev.'Asset Tag Number' 
-    # find the device in gsuite
-    ($gamDeviceRaw = .$gam print cros query "asset_id: $barCode" fields $crosFields) *>$null
-    if ($gamDeviceRaw){
-     $gamDevice = $gamDeviceRaw | ConvertFrom-Csv
-     $id = $gamDevice.deviceId
-     if ($WhatIf){
-      ".$gam update cros $id ou $targOU"
-     } else {
-      .$gam update cros $id ou $targOU
-     }
+   $barCode = $dev.'Asset Tag Number'
+   # find the device in gsuite
+   ($gamDeviceRaw = .$gam print cros query "asset_id: $barCode" fields $crosFields) *>$null
+   # $gamDeviceRaw.count
+   if ($gamDeviceRaw.count -eq 2){ # make sure there is 1 header row and exactly 1 result row
+    $gamDevice = $gamDeviceRaw | ConvertFrom-Csv
+    $id = $gamDevice.deviceId
+    if ($id){
+     if ($WhatIf){ ".$gam update cros $id ou $targOU"
+     } else { .$gam update cros $id ou $targOU }
      Add-Log gsuitemove ('{0} moved to {1}' -f $id, $targOU) -WhatIf:$WhatIf
-    } else {
-     Add-Log warning ('{0} barcode/Asset Tag not found in GSuite' -f $barCode)
-    }
-  }
- }
+    } else { Add-Log warning ('{0} barcode/Asset Tag device id not set' -f $barCode) }
+   } else { 
+    Add-Log warning ('{0} barcode/Asset Tag too few or too many results from cros query.Asset Tag Likely not in Gsuite.' -f $barCode) 
+   }
+   if ($gamDeviceRaw.count -gt 2){
+    Add-Log error 'Too many devices returned. Check and reconcile conflicting barcode/Asset Tag assignment in SIS/GSuite'
+    $gamDeviceRaw
+   }
+  } # end foreach dev
+ } # end process block
  end {}
 }
 
