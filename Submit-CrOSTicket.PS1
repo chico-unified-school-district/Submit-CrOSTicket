@@ -144,7 +144,7 @@ function moveToCart ($deviceResults,[string]$type) {
     if ($id){
      if ($WhatIf){ ".$gam update cros $id ou $targOU"
      } else { .$gam update cros $id ou $targOU }
-     Add-Log gsuitemove ('{0} moved to {1}' -f $id, $targOU) -WhatIf:$WhatIf
+     Add-Log gsuitemove ('{0},{1} moved to {2}' -f $barCode, $id, $targOU) -WhatIf:$WhatIf
     } else { Add-Log warning ('{0} barcode/Asset Tag device id not set' -f $barCode) }
    } else { 
     Add-Log warning ('{0} barcode/Asset Tag too few or too many results from cros query.Asset Tag Likely not in Gsuite.' -f $barCode) 
