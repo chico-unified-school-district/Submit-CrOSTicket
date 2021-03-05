@@ -5,15 +5,16 @@ SELECT
   -- KACE Status
   'New' AS [STATUS],
   -- Condition
-  CASE WHEN [DRA].[CD] = 'D' THEN 'Damaged'
-  WHEN [DRA].[CD] = 'M' THEN 'Lost'
-  WHEN [DRA].[CD] = 'R' THEN 'No Hardware Damage' 
-  WHEN [DRA].[CD] = 'S' THEN 'Stolen w Police report'
-  WHEN [DRA].[CD] = 'V' THEN 'Recovered/Reactivated'
-  WHEN [DRA].[CD] = 'W' THEN 'No Hardware Damage'
- ELSE 'No Hardware Damage' END AS [Condition],
+  CASE
+   WHEN [DRA].[CD] = 'D' THEN 'Damaged'
+   WHEN [DRA].[CD] = 'M' THEN 'Lost'
+   WHEN [DRA].[CD] = 'R' THEN 'No Hardware Damage' 
+   WHEN [DRA].[CD] = 'S' THEN 'Stolen w Police report'
+   WHEN [DRA].[CD] = 'V' THEN 'Recovered/Reactivated'
+   WHEN [DRA].[CD] = 'W' THEN 'No Hardware Damage'
+  ELSE '' END AS [Condition],
   -- KACE Site
-  CASE 
+  CASE
   WHEN STU.SC = 1 THEN 'Chico High School'
   WHEN STU.SC = 2 THEN 'Pleasant Valley High School'
   WHEN STU.SC = 3 THEN 'Fair View'
