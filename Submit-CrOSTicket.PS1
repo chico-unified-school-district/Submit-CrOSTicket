@@ -177,7 +177,7 @@ do {
 
  if ( $closedTicketDevices ) {
   # Add-Log info ('Closed Ticket Devices to process: {0}' -f $newRepairDevices.count)
-  submitTicket -deviceResults $closedTicketDevices -type closedTicketDevices
+  # submitTicket -deviceResults $closedTicketDevices -type closedTicketDevices  # disabled due to KACE overload
   moveToCart -deviceResults $closedTicketDevices -type closedTicketDevices
  }
 
