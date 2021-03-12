@@ -44,12 +44,12 @@ param (
  # Aeries SQL user account with SELECT permission to STU table 
  [Parameter(Mandatory = $True)]
  [Alias('SISCred')]
- [System.Management.Automation.PSCredential]$SISCredential,
+ [System.Management.Automation.PSCredential]$SQLCredential,
  [Parameter(Mandatory = $True)]
  [Alias('MailCred')]
  [System.Management.Automation.PSCredential]$EmailCredential,
  [Parameter(Mandatory = $false)]
- [string]$DefaultOwner,
+ [string]$TicketOwner,
  [Parameter(Mandatory = $True)]
  [string]$TargetAddress,
 	[SWITCH]$WhatIf
@@ -60,12 +60,18 @@ param (
 . .\lib\Invoke-SqlCommand.ps1 # Useful function for querying SQL and returning results
 . .\lib\Select-Site.ps1
 
+$sqlParams  = @{
+ Server     = $SQLServer
+ Database   = $SQLDatabase
+ Credential = $SQLCredential
+}
+
 function submitTicket ($deviceResults,[string]$type) {
  begin {Write-Verbose "Submit Tickets - Processing $type"}
  process {
   foreach ($dev in $deviceResults ) {
    # Begin Device Processing
-   Write-Debug ( "`n`n============ Process {0} ? ==============`n" -f $dev.'Asset Tag Number' )
+   Write-Debug ( "`n`n============ submitTicket {0} ? ==============`n" -f $dev.'Asset Tag Number' )
 
    # Special Repair Location for tickets with a Status of 'Closed'
    if ($dev.'Status' -eq 'Closed') { $repairLocation = 'No Repair Needed'
@@ -85,22 +91,16 @@ function submitTicket ($deviceResults,[string]$type) {
     $dev.'Date Check-in by Student' # 9
     $dev.'Device Model'             #10
     $dev.'Category'                 #11
-    $DefaultOwner                   #12
+    $TicketOwner                   #12
     $dev.'Damage Code'              #13
     $dev.'Warranty Date'            #14
     $repairLocation                 #15
     $dev.'Comment'                  #16
    )
- 
+
    # This can be used to look up the corresponding helpdesk ticket in KACE
    Write-Verbose ( "{0} - Chromebook Turn-In - {1}" -f $dev.'Site', $dev.'Asset Tag Number' )
- 
-   # Fill in 'Last Ticket Date' [DRA].[DD] field to prevent duplicate tickets
-   $updateDDFields = $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student'
-   Add-Log update ( 'DRA.DD (Ticket Date) Updated where ID {0} RIN {1} Check-In Date {2}' -f $updateDDFields  ) -WhatIf:$WhatIf
-   $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $updateDDFields
-   Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -SqlCommand $updateDDCommand -WhatIf:$WhatIf
- 
+
    $mailParams = @{
     To         = ('<{0}>' -f $TargetAddress)
     # Bcc = '<testing@company.com>'
@@ -113,8 +113,8 @@ function submitTicket ($deviceResults,[string]$type) {
     UseSSL     = $True
     Port       = 587
    }
- 
-   Add-Log email ("{0},Helpdesk Ticket Created" -f $dev.'Asset Tag Number' ) -WhatIf:$WhatIf
+   $emailLogVars = $dev.'Student ID Number' ,$dev.'Asset Tag Number'
+   Add-Log email ("{0},{1} Helpdesk Ticket Created" -f $emailLogVars ) -WhatIf:$WhatIf
    if ( $WhatIf ) { $to, $messageBody }
    else { Send-MailMessage @mailParams }
  
@@ -134,6 +134,7 @@ function moveToCart ($deviceResults,[string]$type) {
  begin {Write-Verbose "Move To Cart - Processing $type"}
  process {
   foreach ($dev in $deviceResults) {
+   Write-Debug ( "`n`n============ moveToCart {0} ? ==============`n" -f $dev.'Asset Tag Number' )
    $barCode = $dev.'Asset Tag Number'
    # find the device in gsuite
    ($gamDeviceRaw = .$gam print cros query "asset_id: $barCode" fields $crosFields) *>$null
@@ -142,12 +143,12 @@ function moveToCart ($deviceResults,[string]$type) {
     $gamDevice = $gamDeviceRaw | ConvertFrom-Csv
     $id = $gamDevice.deviceId
     if ($id){
-     if ($WhatIf){ ".$gam update cros $id ou $targOU"
+     if ($WhatIf){ Add-Log gsuitemove ".$gam update cros $id ou $targOU" -Whatif
      } else { .$gam update cros $id ou $targOU }
-     Add-Log gsuitemove ('{0},{1} moved to {2}' -f $barCode, $id, $targOU) -WhatIf:$WhatIf
+     Add-Log gsuitemove ('{0},{1},{2}' -f $dev.'Student ID Number' ,$barCode, $targOU) -WhatIf:$WhatIf
     } else { Add-Log warning ('{0} barcode/Asset Tag device id not set' -f $barCode) }
-   } else { 
-    Add-Log warning ('{0} barcode/Asset Tag too few or too many results from cros query.Asset Tag Likely not in Gsuite.' -f $barCode) 
+   } else {
+    Add-Log warning ('{0} barcode/Asset Tag too few or too many results from cros query.Asset Tag Likely not in Gsuite.' -f $barCode)
    }
    if ($gamDeviceRaw.count -gt 2){
     Add-Log error 'Too many devices returned. Check and reconcile conflicting barcode/Asset Tag assignment in SIS/GSuite'
@@ -156,7 +157,23 @@ function moveToCart ($deviceResults,[string]$type) {
   } # end foreach dev
  } # end process block
  end {}
-}
+} # end function moveToCart
+
+function updateDDField  ($deviceResults,[string]$type){
+ begin {Write-Verbose "Update DD Field - Processing $type"}
+ Process {
+  foreach ($dev in $deviceResults) {
+   Write-Debug ( "`n`n============ updateDDField {0} ? ==============`n" -f $dev.'Asset Tag Number' )
+   $barCode = $dev.'Asset Tag Number'
+   # Fill in 'Last Ticket Date' [DRA].[DD] field to prevent duplicate tickets
+   $updateDDFields = $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student'
+   Add-Log updatedd ( 'DRA.DD (Ticket Date) Updated where ID {0} RIN {1} Check-In Date {2}' -f $updateDDFields  ) -WhatIf:$WhatIf
+   $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $updateDDFields
+   Invoke-SqlCommand @sqlParams -SqlCommand $updateDDCommand -WhatIf:$WhatIf
+  }
+ }
+ end {}
+} # end function updateDDField
 
 # Processing
 $newRepairQuery = Get-Content -Path '.\sql\new-repair-tickets-2.sql' -Raw
@@ -167,23 +184,29 @@ $stopTime = Get-Date "5:00pm"
 "Runs every 60 minutes. Stops at $stopTime."
 do {
  # Begin Do Loop
- $newRepairDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $newRepairQuery
- $closedTicketDevices = Invoke-SqlCommand -Server $SQLServer -Database $SQLDatabase -Cred $SISCredential -Query $closedTickerQuery
+
+ $newRepairDevices = Invoke-SqlCommand @sqlParams -Query $newRepairQuery
+ $closedTicketDevices = Invoke-SqlCommand @sqlParams -Query $closedTickerQuery
+# 'derpins=================='
+#  $newRepairDevices.count
+
  if ( $newRepairDevices ) {
-  # Add-Log info ('New Repair Devices to process: {0}' -f $newRepairDevices.count)
+  Add-Log info ('New Repair Devices to process: {0}' -f $newRepairDevices.count)
   submitTicket -deviceResults $newRepairDevices -Type newRepairDevices
   moveToCart -deviceResults $newRepairDevices -Type newRepairDevices
+  updateDDField -deviceResults $newRepairDevices -type newRepairDevices
  }
 
  if ( $closedTicketDevices ) {
-  # Add-Log info ('Closed Ticket Devices to process: {0}' -f $newRepairDevices.count)
-  # submitTicket -deviceResults $closedTicketDevices -type closedTicketDevices  # disabled due to KACE overload
+  Add-Log info ('Closed Ticket Devices to process: {0}' -f $closedTicketDevices.count)
+  # submitTicket disabled for this device entry type due to ticket KACE overload!
   moveToCart -deviceResults $closedTicketDevices -type closedTicketDevices
+  updateDDField -deviceResults $closedTicketDevices -type closedTicketDevices
  }
 
  if (!$WhatIf) {
   $waitHours = 1
-  Write-Verbose "Next run at $((Get-Date).AddHours($waitHours))."
+  Add-Log info "Next run at $((Get-Date).AddHours($waitHours))."
   Start-Sleep -Seconds (60 * 60)
  }
 } until ( $WhatIf -or ((Get-Date) -ge $stopTime) )
