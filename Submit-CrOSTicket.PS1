@@ -144,8 +144,13 @@ function moveToCart ($deviceResults,[string]$type) {
     $id = $gamDevice.deviceId
     if ($id){
      if ($WhatIf){ Add-Log gsuitemove ".$gam update cros $id ou $targOU" -Whatif
-     } else { .$gam update cros $id ou $targOU }
-     Add-Log gsuitemove ('{0},{1},{2}' -f $dev.'Student ID Number' ,$barCode, $targOU) -WhatIf:$WhatIf
+     } else {
+      # Skip Devices where RID = 6. These need to stay put.
+      if ($dev.rid -ne 6) {
+       Add-Log gsuitemove ('{0},{1},{2}' -f $dev.'Student ID Number' ,$barCode, $targOU) -WhatIf:$WhatIf
+      .$gam update cros $id ou $targOU
+      }
+     }
     } else { Add-Log warning ('{0} barcode/Asset Tag device id not set' -f $barCode) }
    } else {
     Add-Log warning ('{0} barcode/Asset Tag too few or too many results from cros query.Asset Tag Likely not in Gsuite.' -f $barCode)
