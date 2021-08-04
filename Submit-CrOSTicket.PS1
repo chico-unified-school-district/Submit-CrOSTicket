@@ -130,7 +130,7 @@ $crosFields = "annotatedUser,annotatedAssetId,orgUnitPath,deviceId,status"
 $targOU = '/Chromebooks/Cart'
 
 function moveToCart ($deviceResults,[string]$type) {
- # moveToCart function moves all processed devices with a valid devid_id/barcode to the '/Chromebooks/Cart' OU
+ # moveToCart function moves all vaild devices with a valid devid_id/barcode to the '/Chromebooks/Cart' OU
  begin {Write-Verbose "Move To Cart - Processing $type"}
  process {
   foreach ($dev in $deviceResults) {
