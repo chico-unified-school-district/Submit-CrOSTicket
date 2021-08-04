@@ -13,9 +13,9 @@
 .PARAMETER WhatIf
  Switch to turn testing mode on or off.
 .EXAMPLE
- .\Submit-CrOSTicket.PS1 -SISConn $sisConn -SISCred $sisCred -EmailCredential $EmailCredential
+ .\Submit-CrOSTicket.PS1 -SISServer mySISServer $SISData mySISDatabse -SISCred $sisCred -EmailCredential $EmailCredential
  .EXAMPLE
- .\Submit-CrOSTicket.PS1 -SISConn $sisConn -SISCred $sisCred -EmailCredential $EmailCredential -Verbose -WhatIf -Debug
+ .\Submit-CrOSTicket.PS1 -SISServer mySISServer $SISData mySISDatabse -SISCred $sisCred -EmailCredential $EmailCredential -Verbose -WhatIf -Debug
 .INPUTS
  A string containing a database server name and database name in the format 'ServerName\DatabaseName'
  A credential object with permissions to Aeries Database(s)
