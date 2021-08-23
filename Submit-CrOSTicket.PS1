@@ -60,22 +60,24 @@ param (
 . .\lib\Invoke-SqlCommand.ps1 # Useful function for querying SQL and returning results
 . .\lib\Select-Site.ps1
 
-$sqlParams  = @{
+$sqlParams = @{
  Server     = $SQLServer
  Database   = $SQLDatabase
  Credential = $SQLCredential
 }
 
-function submitTicket ($deviceResults,[string]$type) {
- begin {Write-Verbose "Submit Tickets - Processing $type"}
+function submitTicket ($deviceResults, [string]$type) {
+ begin { Write-Verbose "Submit Tickets - Processing $type" }
  process {
   foreach ($dev in $deviceResults ) {
    # Begin Device Processing
    Write-Debug ( "`n`n============ submitTicket {0} ? ==============`n" -f $dev.'Asset Tag Number' )
 
    # Special Repair Location for tickets with a Status of 'Closed'
-   if ($dev.'Status' -eq 'Closed') { $repairLocation = 'No Repair Needed'
-   } else { $repairLocation = 'Tech Center' }
+   if ($dev.'Status' -eq 'Closed') {
+    $repairLocation = 'No Repair Needed'
+   }
+   else { $repairLocation = 'Tech Center' }
 
    # $messageData #'s correspond to the format operator placeholders in HelpDesk-Message.txt
    $messageData = @(
@@ -113,7 +115,7 @@ function submitTicket ($deviceResults,[string]$type) {
     UseSSL     = $True
     Port       = 587
    }
-   $emailLogVars = $dev.'Student ID Number' ,$dev.'Asset Tag Number'
+   $emailLogVars = $dev.'Student ID Number' , $dev.'Asset Tag Number'
    Add-Log email ("{0},{1} Helpdesk Ticket Created" -f $emailLogVars ) -WhatIf:$WhatIf
    if ( $WhatIf ) { $to, $messageBody }
    else { Send-MailMessage @mailParams }
@@ -129,9 +131,9 @@ $gam = '.\lib\gam-64\gam.exe'
 $crosFields = "annotatedUser,annotatedAssetId,orgUnitPath,deviceId,status"
 $targOU = '/Chromebooks/Cart'
 
-function moveToCart ($deviceResults,[string]$type) {
+function moveToCart ($deviceResults, [string]$type) {
  # moveToCart function moves all vaild devices with a valid devid_id/barcode to the '/Chromebooks/Cart' OU
- begin {Write-Verbose "Move To Cart - Processing $type"}
+ begin { Write-Verbose "Move To Cart - Processing $type" }
  process {
   foreach ($dev in $deviceResults) {
    Write-Debug ( "`n`n============ moveToCart {0} ? ==============`n" -f $dev.'Asset Tag Number' )
@@ -139,23 +141,31 @@ function moveToCart ($deviceResults,[string]$type) {
    # find the device in gsuite
    ($gamDeviceRaw = .$gam print cros query "asset_id: $barCode" fields $crosFields) *>$null
    # $gamDeviceRaw.count
-   if ($gamDeviceRaw.count -eq 2){ # make sure there is 1 header row and exactly 1 result row
+   if ($gamDeviceRaw.count -eq 2) {
+    # make sure there is 1 header row and exactly 1 result row
     $gamDevice = $gamDeviceRaw | ConvertFrom-Csv
     $id = $gamDevice.deviceId
-    if ($id){
-     if ($WhatIf){ Add-Log gsuitemove ".$gam update cros $id ou $targOU" -Whatif
-     } else {
+    if ($id) {
+     if ($WhatIf) {
+      Add-Log gsuitemove ".$gam update cros $id ou $targOU" -Whatif
+     }
+     else {
       # Skip Devices where RID = 6. These need to stay put.
       if ($dev.rid -ne 6) {
-       Add-Log gsuitemove ('{0},{1},{2}' -f $dev.'Student ID Number' ,$barCode, $targOU) -WhatIf:$WhatIf
-      .$gam update cros $id ou $targOU
+       Add-Log gsuitemove ('{0},{1},{2}' -f $dev.'Student ID Number' , $barCode, $targOU) -WhatIf:$WhatIf
+       .$gam update cros $id ou $targOU
+      }
+      else {
+       Add-Log skipmove ('DRA.RID = 6 for {0},{1}' -f $barCode, $id)
       }
      }
-    } else { Add-Log warning ('{0} barcode/Asset Tag device id not set' -f $barCode) }
-   } else {
+    }
+    else { Add-Log warning ('{0} barcode/Asset Tag device id not set' -f $barCode) }
+   }
+   else {
     Add-Log warning ('{0} barcode/Asset Tag too few or too many results from cros query.Asset Tag Likely not in Gsuite.' -f $barCode)
    }
-   if ($gamDeviceRaw.count -gt 2){
+   if ($gamDeviceRaw.count -gt 2) {
     Add-Log error 'Too many devices returned. Check and reconcile conflicting barcode/Asset Tag assignment in SIS/GSuite'
     $gamDeviceRaw
    }
@@ -164,8 +174,8 @@ function moveToCart ($deviceResults,[string]$type) {
  end {}
 } # end function moveToCart
 
-function updateDDField  ($deviceResults,[string]$type){
- begin {Write-Verbose "Update DD Field - Processing $type"}
+function updateDDField  ($deviceResults, [string]$type) {
+ begin { Write-Verbose "Update DD Field - Processing $type" }
  Process {
   foreach ($dev in $deviceResults) {
    Write-Debug ( "`n`n============ updateDDField {0} ? ==============`n" -f $dev.'Asset Tag Number' )
@@ -192,8 +202,8 @@ do {
 
  $newRepairDevices = Invoke-SqlCommand @sqlParams -Query $newRepairQuery
  $closedTicketDevices = Invoke-SqlCommand @sqlParams -Query $closedTickerQuery
-# 'derpins=================='
-#  $newRepairDevices.count
+ # 'derpins=================='
+ #  $newRepairDevices.count
 
  if ( $newRepairDevices ) {
   Add-Log info ('New Repair Devices to process: {0}' -f $newRepairDevices.count)
