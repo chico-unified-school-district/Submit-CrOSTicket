@@ -3,7 +3,7 @@ SELECT
   -- Asset Tag Number = Barcode
   [DRI].[BC] AS [Asset Tag Number],
   -- RID Used to keep Chromebooks from being moved when value = 6
-  DRA.RID,
+  [DRA].[RID],
   -- KACE Status
   'New' AS [STATUS],
   -- Condition
