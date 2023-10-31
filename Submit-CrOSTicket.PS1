@@ -158,7 +158,6 @@ function moveToCart ($deviceResults, [string]$type) {
      else {
       # Skip Devices where RID = 6. These need to stay put.
       if ($dev.rid -ne 6) {
-       Write-Verbose
        Add-Log gsuitemove ('{0},{1},{2}' -f $dev.'Student ID Number' , $barCode, $targOU) -WhatIf:$WhatIf
        .$gam update cros $id ou $targOU
       }
