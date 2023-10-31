@@ -3,7 +3,7 @@ SELECT
   -- Asset Tag Number = Barcode
   [DRI].[BC] AS [Asset Tag Number],
   -- RID Used to keep Chromebooks from being moved when value = 6
-  [DRA].[RID],
+  DRA.RID,
   -- KACE Status
   'New' AS [STATUS],
   -- Condition
@@ -81,7 +81,6 @@ SELECT
     WHEN [DRI].[WH] = 'G5' THEN 'HP G5'
     WHEN [DRI].[WH] = 'G6' THEN 'HP G6'
     WHEN [DRI].[WH] = 'G7' THEN 'HP G7'
-    WHEN [DRI].[WH] = 'G8' THEN 'HP G8'
     ELSE ' ' END AS [Device Model],
   -- KACE Owner
   --'samAccountName' AS [Owner],

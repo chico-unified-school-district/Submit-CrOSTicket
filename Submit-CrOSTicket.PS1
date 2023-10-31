@@ -41,7 +41,7 @@ param (
  [Parameter(Mandatory = $True)]
  [Alias('SISDatabase', 'SISDB')]
  [string]$SQLDatabase,
- # Aeries SQL user account with SELECT permission to STU table 
+ # Aeries SQL user account with SELECT permission to STU table
  [Parameter(Mandatory = $True)]
  [Alias('SISCred')]
  [System.Management.Automation.PSCredential]$SQLCredential,
@@ -52,18 +52,24 @@ param (
  [string]$TicketOwner,
  [Parameter(Mandatory = $True)]
  [string]$TargetAddress,
+ [Alias('wi')]
 	[SWITCH]$WhatIf
 )
 
 # Imported Functions
 . .\lib\Add-Log.ps1 # Format Log entries
-. .\lib\Invoke-SqlCommand.ps1 # Useful function for querying SQL and returning results
+. .\lib\Clear-SessionData.ps1
+. .\lib\Load-Module.ps1
 . .\lib\Select-Site.ps1
+. .\lib\Show-TestRun.ps1
+
+'SqlServer' | Load-Module
 
 $sqlParams = @{
- Server     = $SQLServer
- Database   = $SQLDatabase
- Credential = $SQLCredential
+ Server                 = $SQLServer
+ Database               = $SQLDatabase
+ Credential             = $SQLCredential
+ TrustServerCertificate = $true
 }
 
 function submitTicket ($deviceResults, [string]$type) {
@@ -119,15 +125,15 @@ function submitTicket ($deviceResults, [string]$type) {
    Add-Log email ("{0},{1} Helpdesk Ticket Created" -f $emailLogVars ) -WhatIf:$WhatIf
    if ( $WhatIf ) { $to, $messageBody }
    else { Send-MailMessage @mailParams }
- 
+
   }  # End Device Processing
  }
  end {}
  # if ($dev.'Asset Tag Number' -eq 'CB202000024328') { EXIT } # Not sure why this is still here
 } # End submitTicket Function
 
-$ENV:GAM_DEVICE_MAX_RESULTS = 100
-$gam = '.\lib\gam-64\gam.exe'
+# $ENV:GAM_DEVICE_MAX_RESULTS = 100
+$gam = '.\bin\gam.exe'
 $crosFields = "annotatedUser,annotatedAssetId,orgUnitPath,deviceId,status"
 $targOU = '/Chromebooks/Cart'
 
@@ -152,24 +158,22 @@ function moveToCart ($deviceResults, [string]$type) {
      else {
       # Skip Devices where RID = 6. These need to stay put.
       if ($dev.rid -ne 6) {
+       Write-Verbose
        Add-Log gsuitemove ('{0},{1},{2}' -f $dev.'Student ID Number' , $barCode, $targOU) -WhatIf:$WhatIf
        .$gam update cros $id ou $targOU
       }
-      else {
-       Add-Log skipmove ('DRA.RID = 6 for {0},{1}' -f $barCode, $id)
-      }
      }
+     # else { Add-Log warning ('{0} barcode/Asset Tag device id not set' -f $barCode) }
     }
-    else { Add-Log warning ('{0} barcode/Asset Tag device id not set' -f $barCode) }
+    else {
+     Add-Log warning ('{0} barcode/Asset Tag too few or too many results from cros query.Asset Tag Likely not in Gsuite.' -f $barCode)
+    }
+    if ($gamDeviceRaw.count -gt 2) {
+     Add-Log error 'Too many devices returned. Check and reconcile conflicting barcode/Asset Tag assignment in SIS/GSuite'
+     $gamDeviceRaw
+    }
    }
-   else {
-    Add-Log warning ('{0} barcode/Asset Tag too few or too many results from cros query.Asset Tag Likely not in Gsuite.' -f $barCode)
-   }
-   if ($gamDeviceRaw.count -gt 2) {
-    Add-Log error 'Too many devices returned. Check and reconcile conflicting barcode/Asset Tag assignment in SIS/GSuite'
-    $gamDeviceRaw
-   }
-  } # end foreach dev
+  }
  } # end process block
  end {}
 } # end function moveToCart
@@ -184,13 +188,17 @@ function updateDDField  ($deviceResults, [string]$type) {
    $updateDDFields = $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student'
    Add-Log updatedd ( 'DRA.DD (Ticket Date) Updated where ID {0} RIN {1} Check-In Date {2}' -f $updateDDFields  ) -WhatIf:$WhatIf
    $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $updateDDFields
-   Invoke-SqlCommand @sqlParams -SqlCommand $updateDDCommand -WhatIf:$WhatIf
+   Write-Host ('{0}' -f $MyInvocation.MyCommand.Name, $updateDDCommand) -f Magenta
+   if (-not$WhatIf) { Invoke-SqlCmd @sqlParams -Query $updateDDCommand }
   }
  }
  end {}
 } # end function updateDDField
 
 # Processing
+Show-TestRun
+Clear-SessionData
+
 $newRepairQuery = Get-Content -Path '.\sql\new-repair-tickets-2.sql' -Raw
 $closedTickerQuery = Get-Content -Path '.\sql\closed-ticket.sql' -Raw
 $messageTemplate = Get-Content -Path '.\lib\HelpDesk-Message.txt' -Raw
@@ -200,8 +208,8 @@ $stopTime = Get-Date "5:00pm"
 do {
  # Begin Do Loop
 
- $newRepairDevices = Invoke-SqlCommand @sqlParams -Query $newRepairQuery
- $closedTicketDevices = Invoke-SqlCommand @sqlParams -Query $closedTickerQuery
+ $newRepairDevices = Invoke-SqlCmd @sqlParams -Query $newRepairQuery
+ $closedTicketDevices = Invoke-SqlCmd @sqlParams -Query $closedTickerQuery
  # 'derpins=================='
  #  $newRepairDevices.count
 
@@ -209,14 +217,14 @@ do {
   Add-Log info ('New Repair Devices to process: {0}' -f $newRepairDevices.count)
   submitTicket -deviceResults $newRepairDevices -Type newRepairDevices
   moveToCart -deviceResults $newRepairDevices -Type newRepairDevices
-  updateDDField -deviceResults $newRepairDevices -type newRepairDevices
+  updateDDField -deviceResults $newRepairDevices -type newRepairDevices # move these into moveToCart function
  }
 
  if ( $closedTicketDevices ) {
   Add-Log info ('Closed Ticket Devices to process: {0}' -f $closedTicketDevices.count)
   # submitTicket disabled for this device entry type due to ticket KACE overload!
   moveToCart -deviceResults $closedTicketDevices -type closedTicketDevices
-  updateDDField -deviceResults $closedTicketDevices -type closedTicketDevices
+  updateDDField -deviceResults $closedTicketDevices -type closedTicketDevices# move these into moveToCart function
  }
 
  if (!$WhatIf) {
@@ -226,3 +234,5 @@ do {
  }
 } until ( $WhatIf -or ((Get-Date) -ge $stopTime) )
 # End Do Loop
+Show-TestRun
+Clear-SessionData
