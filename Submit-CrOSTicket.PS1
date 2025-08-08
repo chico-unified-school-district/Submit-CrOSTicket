@@ -29,7 +29,6 @@
 .NOTES
  Tag number standardized at 14 characters. This may change in the future.
 #>
-#Requires -Version 5.0
 
 [cmdletbinding()]
 param (
@@ -56,29 +55,18 @@ param (
 	[SWITCH]$WhatIf
 )
 
-# Imported Functions
-. .\lib\Add-Log.ps1 # Format Log entries
-. .\lib\Clear-SessionData.ps1
-. .\lib\Load-Module.ps1
-. .\lib\Select-Site.ps1
-. .\lib\Show-TestRun.ps1
-
-'SqlServer' | Load-Module
+Import-Module -Name 'dbatools', 'CommonScriptFunctions'
 
 $sqlParams = @{
- Server                 = $SQLServer
- Database               = $SQLDatabase
- Credential             = $SQLCredential
- TrustServerCertificate = $true
+ Server     = $SQLServer
+ Database   = $SQLDatabase
+ Credential = $SQLCredential
 }
 
 function submitTicket ($deviceResults, [string]$type) {
  begin { Write-Verbose "Submit Tickets - Processing $type" }
  process {
   foreach ($dev in $deviceResults ) {
-   # Begin Device Processing
-   Write-Debug ( "`n`n============ submitTicket {0} ? ==============`n" -f $dev.'Asset Tag Number' )
-
    # Special Repair Location for tickets with a Status of 'Closed'
    if ($dev.'Status' -eq 'Closed') {
     $repairLocation = 'No Repair Needed'
@@ -99,7 +87,7 @@ function submitTicket ($deviceResults, [string]$type) {
     $dev.'Date Check-in by Student' # 9
     $dev.'Device Model'             #10
     $dev.'Category'                 #11
-    $TicketOwner                   #12
+    $TicketOwner                    #12
     $dev.'Damage Code'              #13
     $dev.'Warranty Date'            #14
     $repairLocation                 #15
@@ -121,15 +109,13 @@ function submitTicket ($deviceResults, [string]$type) {
     UseSSL     = $True
     Port       = 587
    }
-   $emailLogVars = $dev.'Student ID Number' , $dev.'Asset Tag Number'
-   Add-Log email ("{0},{1} Helpdesk Ticket Created" -f $emailLogVars ) -WhatIf:$WhatIf
+   $emailLogVars = $MyInvocation.MyCommand.Name, $dev.'Student ID Number' , $dev.'Asset Tag Number'
+   Write-Host ("{0},{1},{2},Helpdesk Ticket Created" -f $emailLogVars ) -F DarkBlue
    if ( $WhatIf ) { $to, $messageBody }
    else { Send-MailMessage @mailParams }
 
   }  # End Device Processing
  }
- end {}
- # if ($dev.'Asset Tag Number' -eq 'CB202000024328') { EXIT } # Not sure why this is still here
 } # End submitTicket Function
 
 # $ENV:GAM_DEVICE_MAX_RESULTS = 100
@@ -153,28 +139,26 @@ function moveToCart ($deviceResults, [string]$type) {
     $id = $gamDevice.deviceId
     if ($id) {
      if ($WhatIf) {
-      Add-Log gsuitemove ".$gam update cros $id ou $targOU" -Whatif
+      Write-Host ("{0},.$gam update cros $id ou $targOU" -f $MyInvocation.MyCommand.Name) -F DarkCyan
      }
      else {
       # Skip Devices where RID = 6. These need to stay put.
       if ($dev.rid -ne 6) {
-       Add-Log gsuitemove ('{0},{1},{2}' -f $dev.'Student ID Number' , $barCode, $targOU) -WhatIf:$WhatIf
+       Write-Host ('{0},{1},{2}' -f $MyInvocation.MyCommand.Name, $dev.'Student ID Number' , $barCode, $targOU) -F DarkMagenta
        .$gam update cros $id ou $targOU
       }
      }
-     # else { Add-Log warning ('{0} barcode/Asset Tag device id not set' -f $barCode) }
     }
     else {
-     Add-Log warning ('{0} barcode/Asset Tag too few or too many results from cros query.Asset Tag Likely not in Gsuite.' -f $barCode)
+     Write-Host ('{0} barcode/Asset Tag too few or too many results from cros query.Asset Tag Likely not in Gsuite.' -f $barCode)
     }
     if ($gamDeviceRaw.count -gt 2) {
-     Add-Log error 'Too many devices returned. Check and reconcile conflicting barcode/Asset Tag assignment in SIS/GSuite'
+     Write-Host ('{0},Many devices returned. Check and reconcile conflicting barcode/Asset Tag assignment in SIS/GSuite' -f $MyInvocation.MyCommand.Name)
      $gamDeviceRaw
     }
    }
   }
  } # end process block
- end {}
 } # end function moveToCart
 
 function updateDDField  ($deviceResults, [string]$type) {
@@ -184,18 +168,17 @@ function updateDDField  ($deviceResults, [string]$type) {
    Write-Debug ( "`n`n============ updateDDField {0} ? ==============`n" -f $dev.'Asset Tag Number' )
    $barCode = $dev.'Asset Tag Number'
    # Fill in 'Last Ticket Date' [DRA].[DD] field to prevent duplicate tickets
-   $updateDDFields = $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student'
-   Add-Log updatedd ( 'DRA.DD (Ticket Date) Updated where ID {0} RIN {1} Check-In Date {2}' -f $updateDDFields  ) -WhatIf:$WhatIf
-   $updateDDCommand = ( Get-Content -Path .\sql\update-dd.sql -Raw ) -f $updateDDFields
-   Write-Host ('{0}' -f $MyInvocation.MyCommand.Name, $updateDDCommand) -f Magenta
-   if (-not$WhatIf) { Invoke-SqlCmd @sqlParams -Query $updateDDCommand }
+   $sqlVars = "id=$($dev.'Student ID Number')", "rin=$($dev.rin)", "rd=$($dev.'Date Check-in by Student')"
+   # Write-Host ('{0},DRA.DD (Ticket Date) Updated where ID {0} RIN {1} Check-In Date {2}' -f $MyInvocation.MyCommand.Name)
+   Write-Host ('{0},DRA.DD (Ticket Date) Updated where ID {0} RIN {1} Check-In Date {2}' -f $MyInvocation.MyCommand.Name)
+   $updateDDSql = Get-Content -Path .\sql\update-dd.sql -Raw
+   if (-not$WhatIf) { New-SqlOperation @sqlParams -Query $updateDDSql -Parameters $sqlVars }
   }
  }
- end {}
 } # end function updateDDField
 
 # Processing
-Show-TestRun
+if ($WhatIf) { Show-TestRun }
 Clear-SessionData
 
 $newRepairQuery = Get-Content -Path '.\sql\new-repair-tickets-2.sql' -Raw
@@ -207,20 +190,20 @@ $stopTime = Get-Date "5:00pm"
 do {
  # Begin Do Loop
 
- $newRepairDevices = Invoke-SqlCmd @sqlParams -Query $newRepairQuery
- $closedTicketDevices = Invoke-SqlCmd @sqlParams -Query $closedTickerQuery
+ $newRepairDevices = New-SqlOperation @sqlParams -Query $newRepairQuery
+ $closedTicketDevices = New-SqlOperation @sqlParams -Query $closedTickerQuery
  # 'derpins=================='
  #  $newRepairDevices.count
 
  if ( $newRepairDevices ) {
-  Add-Log info ('New Repair Devices to process: {0}' -f $newRepairDevices.count)
+  Write-Host ('New Repair Devices to process: {0}' -f $newRepairDevices.count)
   submitTicket -deviceResults $newRepairDevices -Type newRepairDevices
   moveToCart -deviceResults $newRepairDevices -Type newRepairDevices
   updateDDField -deviceResults $newRepairDevices -type newRepairDevices # move these into moveToCart function
  }
 
  if ( $closedTicketDevices ) {
-  Add-Log info ('Closed Ticket Devices to process: {0}' -f $closedTicketDevices.count)
+  Write-Host ('Closed Ticket Devices to process: {0}' -f $closedTicketDevices.count)
   # submitTicket disabled for this device entry type due to ticket KACE overload!
   moveToCart -deviceResults $closedTicketDevices -type closedTicketDevices
   updateDDField -deviceResults $closedTicketDevices -type closedTicketDevices# move these into moveToCart function
@@ -228,10 +211,10 @@ do {
 
  if (!$WhatIf) {
   $waitHours = 1
-  Add-Log info "Next run at $((Get-Date).AddHours($waitHours))."
+  Write-Host "Next run at $((Get-Date).AddHours($waitHours))."
   Start-Sleep -Seconds (60 * 60)
  }
 } until ( $WhatIf -or ((Get-Date) -ge $stopTime) )
 # End Do Loop
-Show-TestRun
+if ($WhatIf) { Show-TestRun }
 Clear-SessionData

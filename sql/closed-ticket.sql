@@ -11,13 +11,13 @@ SELECT
   -- KACE Condiiton
   CASE WHEN [DRA].[CD] = 'D' THEN 'Damaged'
   WHEN [DRA].[CD] = 'M' THEN 'Lost'
-  WHEN [DRA].[CD] = 'R' THEN 'No Hardware Damage' 
+  WHEN [DRA].[CD] = 'R' THEN 'No Hardware Damage'
   WHEN [DRA].[CD] = 'S' THEN 'Stolen w Police report'
   WHEN [DRA].[CD] = 'V' THEN 'Recovered/Reactivated'
   WHEN [DRA].[CD] = 'W' THEN 'No Hardware Damage'
  ELSE 'No Hardware Damage' END AS [Condition],
   -- KACE Site
-  CASE 
+  CASE
   WHEN STU.SC = 1 THEN 'Chico High School'
   WHEN STU.SC = 2 THEN 'Pleasant Valley High School'
   WHEN STU.SC = 3 THEN 'Fair View'
@@ -33,15 +33,15 @@ SELECT
   WHEN STU.SC = 16 THEN 'Hooker Oak'
   WHEN STU.SC = 18 THEN 'McManus'
   WHEN STU.SC = 19 THEN 'Loma Vista'
-  WHEN STU.SC = 20 THEN 'Marigold' 
-  WHEN STU.SC = 21 THEN 'Neal Dow' 
-  WHEN STU.SC = 23 THEN 'Little Chico Creek' 
-  WHEN STU.SC = 24 THEN 'Parkview' 
-  WHEN STU.SC = 25 THEN 'Emma Wilson' 
-  WHEN STU.SC = 26 THEN 'Rosedale' 
-  WHEN STU.SC = 27 THEN 'Shasta' 
-  WHEN STU.SC = 28 THEN 'Sierra View' 
-  WHEN STU.SC = 91 THEN 'Oakdale' 
+  WHEN STU.SC = 20 THEN 'Marigold'
+  WHEN STU.SC = 21 THEN 'Neal Dow'
+  WHEN STU.SC = 23 THEN 'Little Chico Creek'
+  WHEN STU.SC = 24 THEN 'Parkview'
+  WHEN STU.SC = 25 THEN 'Emma Wilson'
+  WHEN STU.SC = 26 THEN 'Rosedale'
+  WHEN STU.SC = 27 THEN 'Shasta'
+  WHEN STU.SC = 28 THEN 'Sierra View'
+  WHEN STU.SC = 91 THEN 'Oakdale'
  ELSE 'District Office' END AS Site,
   -- KACE Student ID Number
   [DRA].[ID] AS [Student ID Number],
@@ -113,6 +113,6 @@ WHERE
  AND DRA.RID IN (1,3,6)
  --AND (NOT STU.TG > ' ') AND STU.SC IN ( 1,2,3,5,6,7,8,9,10,11,12,13,16,17,18,19,20,21,23,24,25,26,27,28,91 )
  AND DRA.RD IS NOT NULL
- AND ( DRA.RD > '2020-12-14' )
+ AND ( DRA.RD > DATEADD(month,-2,GETDATE()) )
 -- Older enteries can be ignored
 ORDER BY DRA.RD,DRA.DD

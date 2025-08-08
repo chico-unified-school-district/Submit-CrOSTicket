@@ -18,6 +18,7 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
+*oauth2.txt
 /jenkins.ps1
 /params.ps1
 /bin/gam.exe

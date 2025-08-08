@@ -10,7 +10,7 @@ SELECT
   CASE
    WHEN [DRA].[CD] = 'D' THEN 'Damaged'
    WHEN [DRA].[CD] = 'M' THEN 'Lost'
-   WHEN [DRA].[CD] = 'R' THEN 'No Hardware Damage' 
+   WHEN [DRA].[CD] = 'R' THEN 'No Hardware Damage'
    WHEN [DRA].[CD] = 'S' THEN 'Stolen w Police report'
    WHEN [DRA].[CD] = 'V' THEN 'Recovered/Reactivated'
    WHEN [DRA].[CD] = 'W' THEN 'No Hardware Damage'
@@ -32,15 +32,15 @@ SELECT
   WHEN STU.SC = 16 THEN 'Hooker Oak'
   WHEN STU.SC = 18 THEN 'McManus'
   WHEN STU.SC = 19 THEN 'Loma Vista'
-  WHEN STU.SC = 20 THEN 'Marigold' 
-  WHEN STU.SC = 21 THEN 'Neal Dow' 
-  WHEN STU.SC = 23 THEN 'Little Chico Creek' 
-  WHEN STU.SC = 24 THEN 'Parkview' 
-  WHEN STU.SC = 25 THEN 'Emma Wilson' 
-  WHEN STU.SC = 26 THEN 'Rosedale' 
-  WHEN STU.SC = 27 THEN 'Shasta' 
-  WHEN STU.SC = 28 THEN 'Sierra View' 
-  WHEN STU.SC = 91 THEN 'Oakdale' 
+  WHEN STU.SC = 20 THEN 'Marigold'
+  WHEN STU.SC = 21 THEN 'Neal Dow'
+  WHEN STU.SC = 23 THEN 'Little Chico Creek'
+  WHEN STU.SC = 24 THEN 'Parkview'
+  WHEN STU.SC = 25 THEN 'Emma Wilson'
+  WHEN STU.SC = 26 THEN 'Rosedale'
+  WHEN STU.SC = 27 THEN 'Shasta'
+  WHEN STU.SC = 28 THEN 'Sierra View'
+  WHEN STU.SC = 91 THEN 'Oakdale'
  ELSE 'District Office' END AS Site,
   -- KACE Student ID Number
   [DRA].[ID] AS [Student ID Number],
@@ -56,8 +56,8 @@ SELECT
   -- KACE Date Issued to Student
   [DRA].[DT] AS [Date Issued to Student],
   -- KACE Damage Code
-  CASE 
-  
+  CASE
+
   WHEN [DRA].[CC] = 'E' THEN 'Keycap Missing'
   WHEN [DRA].[CC] = 'K' THEN 'Keyboard Malfunction'
   WHEN [DRA].[CC] = 'L' THEN 'LCD Cracked'
@@ -108,10 +108,10 @@ WHERE
  --DRI.BC = 'CB201800014887' AND STU.ID = 12345    AND
  (DRA.CC IN ( 'E', 'K','L','N','O','P','Q','S','T','U', 'V', 'X', 'Y' )    or DRA.CD in ('D')) AND
  DRA.DD IS NULL      AND
- 
+
  DRA.RID IN (1,3,6)
   AND (NOT STU.TG > ' ') AND STU.SC IN ( 1,2,3,5,6,7,8,9,10,11,12,13,16,17,18,19,20,21,23,24,25,26,27,28,91 )
   AND DRA.RD IS NOT NULL
-  AND ( DRA.RD > '2020-12-14' )
+  AND ( DRA.RD > DATEADD(day,-7,GETDATE()) )
 -- Older enteries can be ignored
 ORDER BY DRA.RD,DRA.DD
