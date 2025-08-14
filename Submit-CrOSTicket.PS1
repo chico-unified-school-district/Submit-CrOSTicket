@@ -150,7 +150,7 @@ function moveToCart ($deviceResults, [string]$type) {
      }
     }
     else {
-     Write-Host ('{0} barcode/Asset Tag too few or too many results from cros query.Asset Tag Likely not in Gsuite.' -f $barCode)
+     Write-Host ('{0} barcode/Asset Tag too few or too many results from cros query. Asset Tag Likely not in Gsuite.' -f $barCode)
     }
     if ($gamDeviceRaw.count -gt 2) {
      Write-Host ('{0},Many devices returned. Check and reconcile conflicting barcode/Asset Tag assignment in SIS/GSuite' -f $MyInvocation.MyCommand.Name)
@@ -165,14 +165,13 @@ function updateDDField  ($deviceResults, [string]$type) {
  begin { Write-Verbose "Update DD Field - Processing $type" }
  Process {
   foreach ($dev in $deviceResults) {
-   Write-Debug ( "`n`n============ updateDDField {0} ? ==============`n" -f $dev.'Asset Tag Number' )
-   $barCode = $dev.'Asset Tag Number'
+   # $barCode = $dev.'Asset Tag Number'
    # Fill in 'Last Ticket Date' [DRA].[DD] field to prevent duplicate tickets
    $sqlVars = "id=$($dev.'Student ID Number')", "rin=$($dev.rin)", "rd=$($dev.'Date Check-in by Student')"
-   # Write-Host ('{0},DRA.DD (Ticket Date) Updated where ID {0} RIN {1} Check-In Date {2}' -f $MyInvocation.MyCommand.Name)
-   Write-Host ('{0},DRA.DD (Ticket Date) Updated where ID {0} RIN {1} Check-In Date {2}' -f $MyInvocation.MyCommand.Name)
+   $msgVars = $MyInvocation.MyCommand.Name, $dev.'Student ID Number', $dev.rin, $dev.'Date Check-in by Student'
+   Write-Host ('{0},DRA.DD (Ticket Date) Updated where ID {1} RIN {2} Check-In Date {3}' -f $msgVars)
    $updateDDSql = Get-Content -Path .\sql\update-dd.sql -Raw
-   if (-not$WhatIf) { New-SqlOperation @sqlParams -Query $updateDDSql -Parameters $sqlVars }
+   if (!$WhatIf) { New-SqlOperation @sqlParams -Query $updateDDSql -Parameters $sqlVars }
   }
  }
 } # end function updateDDField
@@ -218,3 +217,4 @@ do {
 # End Do Loop
 if ($WhatIf) { Show-TestRun }
 Clear-SessionData
+
