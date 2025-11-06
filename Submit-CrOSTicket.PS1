@@ -55,14 +55,6 @@ param (
 	[SWITCH]$WhatIf
 )
 
-Import-Module -Name 'dbatools', 'CommonScriptFunctions'
-
-$sqlParams = @{
- Server     = $SQLServer
- Database   = $SQLDatabase
- Credential = $SQLCredential
-}
-
 function submitTicket ($deviceResults, [string]$type) {
  begin { Write-Verbose "Submit Tickets - Processing $type" }
  process {
@@ -95,33 +87,29 @@ function submitTicket ($deviceResults, [string]$type) {
    )
 
    # This can be used to look up the corresponding helpdesk ticket in KACE
-   Write-Verbose ( "{0} - Chromebook Turn-In - {1}" -f $dev.'Site', $dev.'Asset Tag Number' )
+   Write-Verbose ( '{0} - Chromebook Turn-In - {1}' -f $dev.'Site', $dev.'Asset Tag Number' )
 
    $mailParams = @{
     To         = ('<{0}>' -f $TargetAddress)
     # Bcc = '<testing@company.com>'
     From       = $EmailCredential.Username # a no reply account works bext
-    Subject    = ( "{0} - Chromebook Turn-In - {1}" -f $dev.'Student ID Number', $dev.'Asset Tag Number')
-    BodyAsHtml = $false
-    Body       = ( $messageBody = $messageTemplate -f $messageData )
+    Subject    = ( '{0} - Chromebook Turn-In - {1}' -f $dev.'Student ID Number', $dev.'Asset Tag Number')
+    Text       = ( $messageBody = $messageTemplate -f $messageData )
     SMTPServer = 'smtp.office365.com'
     Cred       = $EmailCredential
     UseSSL     = $True
     Port       = 587
+    Suppress   = $true
+    WhatIf     = $WhatIf
    }
    $emailLogVars = $MyInvocation.MyCommand.Name, $dev.'Student ID Number' , $dev.'Asset Tag Number'
-   Write-Host ("{0},{1},{2},Helpdesk Ticket Created" -f $emailLogVars ) -F DarkBlue
+   Write-Host ('{0},{1},{2},Helpdesk Ticket Created' -f $emailLogVars ) -F DarkBlue
    if ( $WhatIf ) { $to, $messageBody }
-   else { Send-MailMessage @mailParams }
+   else { Send-EmailMessage @mailParams }
 
   }  # End Device Processing
  }
 } # End submitTicket Function
-
-# $ENV:GAM_DEVICE_MAX_RESULTS = 100
-$gam = '.\bin\gam.exe'
-$crosFields = "annotatedUser,annotatedAssetId,orgUnitPath,deviceId,status"
-$targOU = '/Chromebooks/Cart'
 
 function moveToCart ($deviceResults, [string]$type) {
  # moveToCart function moves all vaild devices with a valid devid_id/barcode to the '/Chromebooks/Cart' OU
@@ -163,7 +151,7 @@ function moveToCart ($deviceResults, [string]$type) {
 
 function updateDDField  ($deviceResults, [string]$type) {
  begin { Write-Verbose "Update DD Field - Processing $type" }
- Process {
+ process {
   foreach ($dev in $deviceResults) {
    # $barCode = $dev.'Asset Tag Number'
    # Fill in 'Last Ticket Date' [DRA].[DD] field to prevent duplicate tickets
@@ -176,6 +164,17 @@ function updateDDField  ($deviceResults, [string]$type) {
  }
 } # end function updateDDField
 
+# ===================================== Main ========================================
+Import-Module -Name CommonScriptFunctions -Cmdlet New-SqlOperation, Show-TestRun, Clear-SessionData
+Import-Module -Name dbatools -Cmdlet Invoke-DbaQuery, Set-DbatoolsConfig, Connect-DbaInstance, Disconnect-DbaInstance
+Import-Module -Name Mailozaurr -Cmdlet Send-EmailMessage
+
+$gam = 'C:\GAM7\gam.exe'
+
+$crosFields = 'annotatedUser,annotatedAssetId,orgUnitPath,deviceId,status'
+$targOU = '/Chromebooks/Cart'
+
+$sqlParams = Connect-DbaInstance -SqlInstance $SQLServer -Database $SQLDatabase -SqlCredential $SQLCredential
 # Processing
 if ($WhatIf) { Show-TestRun }
 Clear-SessionData
@@ -184,15 +183,11 @@ $newRepairQuery = Get-Content -Path '.\sql\new-repair-tickets-2.sql' -Raw
 $closedTickerQuery = Get-Content -Path '.\sql\closed-ticket.sql' -Raw
 $messageTemplate = Get-Content -Path '.\lib\HelpDesk-Message.txt' -Raw
 
-$stopTime = Get-Date "5:00pm"
+$stopTime = Get-Date '5:00pm'
 "Runs every 60 minutes. Stops at $stopTime."
 do {
- # Begin Do Loop
-
  $newRepairDevices = New-SqlOperation @sqlParams -Query $newRepairQuery
  $closedTicketDevices = New-SqlOperation @sqlParams -Query $closedTickerQuery
- # 'derpins=================='
- #  $newRepairDevices.count
 
  if ( $newRepairDevices ) {
   Write-Host ('New Repair Devices to process: {0}' -f $newRepairDevices.count)
@@ -214,7 +209,6 @@ do {
   Start-Sleep -Seconds (60 * 60)
  }
 } until ( $WhatIf -or ((Get-Date) -ge $stopTime) )
-# End Do Loop
 if ($WhatIf) { Show-TestRun }
 Clear-SessionData
 
